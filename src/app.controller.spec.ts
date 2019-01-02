@@ -13,10 +13,10 @@ describe('AppController', () => {
     }).compile();
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
+  describe('healthz', () => {
+    it('should return 200 and UP', () => {
       const appController = app.get<AppController>(AppController);
-      expect(appController.root()).toBe('Hello World!');
+      expect(appController.health()).toBe('UP');
     });
   });
 });

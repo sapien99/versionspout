@@ -9,12 +9,7 @@ export class AppController {
 
     @Get('/healthz')
     health(): string {
-      return this.appService.health();
-  }
-
-    @Post()
-    @UseGuards(AuthGuard('bearer'))
-    async fetch(@Body() body: any) {
-        return this.appService.fetch(JSON.stringify(body));
+      return this.appService.healthz();
     }
+    
 }

@@ -5,7 +5,7 @@ export class AppService {
 
     constructor() {}
 
-    health(): string {
+    healthz(): string {
         return 'UP';
     }
 
