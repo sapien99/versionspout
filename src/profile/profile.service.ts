@@ -6,8 +6,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as async from 'async';
 import * as drc from 'docker-registry-client';
 import * as _ from 'lodash';
-import { DockerCompareResultModel } from 'docker/models/docker-compare-result.model';
+import { DockerCompareRequestModel, DockerCompareResultModel } from 'docker/models/docker-compare.model';
 import { MailService } from 'mail/mail.service';
+import { DockerVersionService } from 'docker/docker-version.service';
 
 @Injectable()
 export class ProfileService {
@@ -53,12 +54,22 @@ export class ProfileService {
      * Get Version comparison for docker artifacts of this profile
      * @param email email of the profiles user
      */
-    async inquireDockerVersions(email: string): Promise<DockerCompareResultModel> {        
-        return null;
+    async inquireDockerVersions(email: string): Promise<DockerCompareResultModel[]> {        
+        // TODO: fetch versions from database for the specified user
+        return this._inquireDockerVersions([]);
+    }
+
+    /**
+     * Private Version comparison for docker artifacts of this profile - used for being directly callable for testing
+     * @param email email of the profiles user
+     */
+    async _inquireDockerVersions(dockerVersions: DockerCompareRequestModel[]): Promise<DockerCompareResultModel[]> {        
+        return this.dockerVersionService.fetchAndCompareMany(dockerVersions);        
     }
 
     // constructor(private readonly httpService: HttpService,
     //    @InjectModel('ProfileModel') private readonly profileModel: Model<ProfileInterface>) {}
-    constructor(private readonly mailService: MailService) {}
+    constructor(private readonly mailService: MailService, 
+        private readonly dockerVersionService: DockerVersionService) {}
 
 }

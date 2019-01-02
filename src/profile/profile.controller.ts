@@ -6,7 +6,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ProfileModel } from './models/profile.model';
-import { ProfileRequestModel } from './models/profile-request.model';
 
 
 @Controller('profiles')

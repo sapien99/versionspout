@@ -1,6 +1,4 @@
 import { CompareServiceInterface } from '../compare-service.interface';
-import { DockerCompareResultModel } from './docker-compare-result.model';
-import { DockerVersionRequestModel } from './docker-version-request.model';
 import { Logger } from '@nestjs/common';
 
 export class DockerCompareRequestModel {
@@ -41,6 +39,32 @@ export class DockerCompareRequestModel {
         this.image = image;
         this.tag = tag;
         this.allowedRange = allowedRange;
+    }
+
+}
+
+export class DockerTagModel {
+
+    public name: string;
+    public created: Date | null;
+
+    constructor(name: string, updated: Date | null) {
+        this.name = name;
+        this.created = updated;
+    }
+
+}
+
+export class DockerCompareResultModel {
+
+    public readonly repository: string;
+    public readonly image: string;
+    public tags: DockerTagModel[];
+
+    constructor(repository: string, image: string, tags: DockerTagModel[]) {
+        this.repository = repository;
+        this.image = image;
+        this.tags = tags;
     }
 
 }

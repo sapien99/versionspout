@@ -6,8 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DockerVersionModel } from './models/docker.model';
-import { DockerCompareRequestModel } from './models/docker-compare-request.model';
-import { DockerCompareResultModel } from './models/docker-compare-result.model';
+import { DockerCompareRequestModel, DockerCompareResultModel } from './models/docker-compare.model';
 
 
 @Controller('docker-versions')

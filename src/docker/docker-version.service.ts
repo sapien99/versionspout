@@ -6,9 +6,7 @@ import * as semver from 'semver';
 import { InjectModel } from '@nestjs/mongoose';
 import * as async from 'async';
 import * as drc from 'docker-registry-client';
-import { DockerCompareResultModel } from './models/docker-compare-result.model';
-import { DockerTagModel } from './models/docker-tag.model';
-import { DockerCompareRequestModel } from './models/docker-compare-request.model';
+import { DockerCompareResultModel, DockerTagModel, DockerCompareRequestModel } from './models/docker-compare.model';
 import { CompareServiceInterface } from './compare-service.interface';
 import * as _ from 'lodash';
 

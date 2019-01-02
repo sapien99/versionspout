@@ -1,9 +1,9 @@
 import { Document } from 'mongoose';
-import { DockerVersionRequestInterface } from 'docker/models/docker-version-request.interface';
+import { DockerCompareRequestModel } from 'docker/models/docker-compare-request.model';
 
 export interface ProfileInterface extends Document {
 
     readonly email: string;
-    readonly dockerVersions: DockerVersionRequestInterface[];    
+    readonly dockerVersions: DockerCompareRequestModel[];    
 
 }

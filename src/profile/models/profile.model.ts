@@ -1,12 +1,12 @@
 import { ProfileInterface } from './profile.interface';
-import { DockerVersionRequestInterface } from 'docker/models/docker-version-request.interface';
+import { DockerCompareRequestModel } from 'docker/models/docker-compare-request.model';
 
 export class ProfileModel implements ProfileInterface {
 
     public readonly email: string;
-    public readonly dockerVersions: DockerVersionRequestInterface[];    
+    public readonly dockerVersions: DockerCompareRequestModel[];    
 
-    constructor(email: string, dockerVersions: DockerVersionRequestInterface[]) {
+    constructor(email: string, dockerVersions: DockerCompareRequestModel[]) {
         this.email = email;
         this.dockerVersions = dockerVersions;    
     }
