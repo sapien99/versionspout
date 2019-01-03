@@ -1,12 +1,11 @@
 import {Get, Post, Controller, Body, HttpCode} from '@nestjs/common';
-import { DockerVersionService } from './docker-version.service';
+import { DockerVersionService } from './docker.service';
 import { Logger } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { DockerVersionModel } from './models/docker.model';
-import { DockerCompareRequestModel, DockerCompareResultModel } from './models/docker-compare.model';
+import { DockerCompareRequestModel, DockerCompareResultModel } from './models/docker.model';
 
 
 @Controller('docker-versions')
@@ -34,7 +33,8 @@ export class DockerVersionController {
         // split input string (separated by blank)
         const requests: DockerCompareRequestModel[] = test.split(' ')
             .map((artifact) => {
-                const model: DockerVersionModel = this.dockerService.createModelFromString(artifact);
+                // TODO: we should be able to remove this
+                const model: DockerCompareRequestModel = this.dockerService.createModelFromString(artifact);
                 return new DockerCompareRequestModel(model.repository, model.image, model.tag, null, null);
             }) as DockerCompareRequestModel[];
         return await Promise.all(requests.map((meta: DockerCompareRequestModel) => meta.fetchAndCompare()));

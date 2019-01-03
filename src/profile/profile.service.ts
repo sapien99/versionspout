@@ -3,12 +3,10 @@ import { ProfileModel } from './models/profile.model';
 import { ProfileInterface } from './models/profile.interface';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import * as async from 'async';
-import * as drc from 'docker-registry-client';
 import * as _ from 'lodash';
-import { DockerCompareRequestModel, DockerCompareResultModel } from 'docker/models/docker-compare.model';
-import { MailService } from 'mail/mail.service';
-import { DockerVersionService } from 'docker/docker-version.service';
+import { DockerCompareRequestModel, DockerCompareResultModel } from '../docker/models/docker.model';
+import { DockerVersionService } from '../docker/docker.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class ProfileService {
@@ -19,9 +17,9 @@ export class ProfileService {
      */
     async createProfile(profile: ProfileModel) {        
         // save profilemodel in db
-        // const createdProfile = new this.profileModel(profile);
-        // return await createdProfile.save();
-        return null;
+        const mongooseModel = new this.profileModel(profile);
+        mongooseModel._id = profile.email;
+        await mongooseModel.update({ upsert: true });                      
     }
 
     /**
@@ -64,12 +62,12 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async _inquireDockerVersions(dockerVersions: DockerCompareRequestModel[]): Promise<DockerCompareResultModel[]> {        
-        return this.dockerVersionService.fetchAndCompareMany(dockerVersions);        
+        return this.dockerVersionService.fetchAndCompareMany(dockerVersions);                
     }
 
-    // constructor(private readonly httpService: HttpService,
-    //    @InjectModel('ProfileModel') private readonly profileModel: Model<ProfileInterface>) {}
-    constructor(private readonly mailService: MailService, 
-        private readonly dockerVersionService: DockerVersionService) {}
+    constructor(        
+        @InjectModel('Profile') private readonly profileModel: Model<ProfileInterface>,
+        private readonly dockerVersionService: DockerVersionService,
+        private readonly mailService: MailService) {}
 
 }

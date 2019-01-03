@@ -1,18 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DockerVersionController } from './docker-version.controller';
-import { DockerVersionService } from './docker-version.service';
-import { DockerCompareRequestModel } from './models/docker-compare-request.model';
-import { DockerCompareResultModel } from './models/docker-compare-result.model';
+import { DockerVersionController } from './docker.controller';
+import { DockerVersionService } from './docker.service';
+import { DockerCompareRequestModel } from './models/docker.model';
 
 describe('AppController', () => {
   let app: TestingModule;
 
   beforeAll(async () => {
-    app = await Test.createTestingModule({
+    /*app = await Test.createTestingModule({
       controllers: [DockerVersionController],
       providers: [DockerVersionService],
     }).compile();
-    console.log('APP', app);
+    console.log('APP', app); */
   });
 
   describe('DockerCompareRequestModel shall transform String into DockerCompareRequestModel', () => {
