@@ -1,0 +1,11 @@
+smtp:
+  enabled: true,
+  host: smtp.dd24.net
+  port: 465
+  secure: true
+  from: webmaster@summit15.com
+  attachments: 
+    - header4.png
+  secret: '/run/secrets/smtp'
+mongo:
+  url: mongodb://localhost:27017/versify

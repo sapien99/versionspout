@@ -6,19 +6,35 @@ import * as yaml from 'js-yaml';
 declare function require(name: string);
 const pkg = require('../package.json');
 
-function readSmtpConfig(path) {
+function readSmtpConfig(configpath, secretpath) {
   if (path) {
-    const doc = yaml.safeLoad(fs.readFileSync(path, 'utf8'));
+    const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));
+    const secret = yaml.safeLoad(fs.readFileSync(secretpath, 'utf8'));
     return {
-      host: doc.smtp.host,
-      port: doc.smtp.port || 25,
-      user: doc.smtp.user,
-      password: doc.smtp.password,
-      secure: doc.smtp.secure || false,
-      testmail_to: process.env.MAIL_TESTUSER,
-      connectionTimeout : normalizeNumber(process.env.MAIL_CONNECTIONTIMEOUT || '5000'),
-      greetingTimeout : normalizeNumber(process.env.MAIL_GREETINGTIMEOUT || '5000'),
-      socketTimeout : normalizeNumber(process.env.MAIL_SOCKETTIMEOUT || '5000'),
+      host: config.smtp.host,
+      port: config.smtp.port || 25,
+      user: secret.smtp.user,      
+      password: secret.smtp.password,
+      secure: config.smtp.secure || false,    
+      connectionTimeout : normalizeNumber(process.env.MAIL_CONNECTIONTIMEOUT || config.smtp.connectionTimeout || '5000'),
+      greetingTimeout : normalizeNumber(process.env.MAIL_GREETINGTIMEOUT || config.smtp.greetingTimeout || '5000'),
+      socketTimeout : normalizeNumber(process.env.MAIL_SOCKETTIMEOUT || config.smtp.socketTimeout || '5000'),
+      // defaults
+      from: config.smtp.from,
+      to: config.smtp.to,
+      cc: config.smtp.cc,
+      bcc: config.smtp.bcc,
+      subject: config.smtp.subject,
+      attachments: config.smtp.attachments,
+    };
+  }
+}
+
+function readMongoConfig(configpath, secretpath) {
+  if (path) {
+    const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));    
+    return {
+      url: config.mongo.url,
     };
   }
 }
@@ -41,7 +57,14 @@ export const globals = {
     port: normalizeNumber(process.env.PORT || '3000'),
     banner: toBool(getOsEnv('APP_BANNER')),
   },
-  mail: readSmtpConfig(getOsEnv('SMTP_SECRET') || path.join(__dirname, '..', 'mounts', 'secrets', 'smtp_creds.yaml')),  
+  mail: readSmtpConfig(
+    getOsEnv('CONFIG') || path.join(__dirname, '..', 'mounts', 'configmaps', 'config.yaml'),
+    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')
+  ),  
+  mongo: readMongoConfig(
+    getOsEnv('CONFIG') || path.join(__dirname, '..', 'mounts', 'configmaps', 'config.yaml'),
+    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')
+  ),
   path: {
     root: path.join(__dirname, '..'),
     profiles: path.join(__dirname, '..', 'mounts', 'profiles'),

@@ -27,6 +27,11 @@ export class ProfileController {
         return await this.profileService.inquireDockerVersions(id);
     }
 
+    @Get(':id/news')
+    async sendNewsMail(@Param('id') id) {
+        return await this.profileService.sendNewsMail(id);
+    }
+
     @Put(':id')
     async update(@Param('id') id, @Body(new ValidationPipe({transform: true})) body: ProfileModel) {
         return await this.profileService.updateProfile(id, body);

@@ -1,5 +1,6 @@
+import { DockerCompareRequestModel } from '../../docker/models/docker.model';
 import { Document } from 'mongoose';
-import { DockerCompareRequestModel } from 'docker/models/docker.model';
+
 
 export interface ProfileInterface extends Document {
 

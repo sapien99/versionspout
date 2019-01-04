@@ -48,38 +48,45 @@ export class DockerVersionService implements CompareServiceInterface {
     async fetchAndCompare( meta: DockerCompareRequestModel ): Promise<DockerCompareResultModel> {
         if (!_.isObject(meta))
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);
-        return this.filterSemverVersions(meta, ['latest', 'master', 'develop']);
-            /*.then((result) => {
-                // TODO: guess we can skip this
-                // reorder the tags
-                return new DockerCompareResultModel(meta.repository, meta.image, result.tags.reverse().map(
-                    (dockerVersion) => new DockerCompareTagModel(dockerVersion.tag, null)));
-            });*/
+        return this.filterSemverVersions(meta, ['latest', 'master', 'develop']);            
     }
 
-    private createManifestWrapper(client, meta, tag) {
-        // TODO: do we need this?
-        return (cb) => {
+    /**
+     * Fetch metainfo for tag (latest hash-id, created-timestamp etc.)
+     * @param client 
+     * @param tag 
+     */
+    private createManifestWrapper(client, tag): Promise<any> {        
+        return new Promise<any>(async (resolve, reject) => {        
             client.getManifest({ref: tag}, (errorManifest, manifestResult) => {
                 if (errorManifest) {
                     Logger.error(errorManifest);
-                    return cb(errorManifest, null);
+                    return reject(errorManifest);
                 }
                 const layer = JSON.parse(manifestResult.history[0].v1Compatibility);
-                const retVal = new DockerCompareRequestModel(meta.repository, meta.image, tag, null, null);
-                // retVal.created = layer.created;
-                cb(null, retVal);
+                layer.hashes = manifestResult.history.map((l) => {
+                    const meta = JSON.parse(l.v1Compatibility);
+                    return meta.id;
+                });
+                resolve(layer);
             });
-        };
+        });
     }
     
+    /**
+     * Fetch Version, either from cache or from repo
+     * @param meta 
+     */
     async fetchVersions( meta: DockerCompareRequestModel): Promise<DockerCompareResultModel> {        
         const client = drc.createClientV2({name: `${meta.repository}/${meta.image}`});
         return new Promise<DockerCompareResultModel>(async (resolve, reject) => {
             // if we have a valid cache entry serve from cache
             const _id = `${meta.repository}/${meta.image}`;
-            const cachedEntry = await this.dockerVersionModel.findById(_id)
-            if (cachedEntry) {
+            const cachedEntry = await this.dockerVersionModel.findById(_id);
+            var now = new Date();
+            now.setDate(now.getDate()+1);            
+            if (cachedEntry && 
+                new Date(cachedEntry.fetched).getTime() < (new Date().getTime() + 1*24*60*60*1000)) {
                 Logger.log(`Fetched repo: ${meta.repository}, ${meta.image} from cache`);
                 return resolve(cachedEntry);                                
             }
@@ -89,13 +96,21 @@ export class DockerVersionService implements CompareServiceInterface {
                 client.close();
                 if (error) {
                     return reject(error);
-                }                
+                }          
                                             
-                // save data in cache
+                // get manifest for each tag. Done as a separate step to preserve order
                 let cacheEntry: DockerCompareResultModel = new DockerCompareResultModel(meta.repository, meta.image, []);                
-                tagsResult.tags.reverse().forEach(async (tag) => {                                                            
-                    cacheEntry.tags.push(new DockerCompareTagModel(tag, null));
-                })
+                const tagMap = {};
+                await Promise.all(tagsResult.tags.map(async (tag) => {
+                    let manifest = await this.createManifestWrapper(client, tag);                    
+                    tagMap[tag] = manifest;                    
+                }));
+
+                tagsResult.tags.reverse().forEach((tag) => {                    
+                    cacheEntry.tags.push(new DockerCompareTagModel(tag, tagMap[tag]));
+                });
+                
+                // save data in cache
                 const mongooseModel = new this.dockerVersionModel(cacheEntry);
                 mongooseModel._id = _id;
                 await mongooseModel.save({ upsert: true });          
@@ -106,7 +121,7 @@ export class DockerVersionService implements CompareServiceInterface {
     }
 
     /**
-     * Filter semver Versions
+     * Filter semver Versions from entried we read
      * @param data
      */
     async filterSemverVersions( meta: DockerCompareRequestModel , ignoreSemverTagCheck: string[]): Promise<DockerCompareResultModel> {        
@@ -136,30 +151,8 @@ export class DockerVersionService implements CompareServiceInterface {
             });
             tagsResult.tags = filtered;
             Logger.log(`Shrinked list down to ${JSON.stringify(tagsResult.tags.length)} for ${tagsResult.repository}/${tagsResult.image}: ${JSON.stringify(tagsResult.tags)}`);
+            tagsResult.allowedRange = meta.allowedRange;
             resolve(tagsResult);
-        });
-    }
-
-    async fetchVersionsAndManifests( meta: DockerCompareRequestModel ): Promise<DockerCompareRequestModel[]> {
-        Logger.log(`Fetching repo: ${meta.repository}, ${meta.image}`);
-        const client = drc.createClientV2({name: `${meta.repository}/${meta.image}`});
-
-        return new Promise<DockerCompareRequestModel[]>((resolve, reject) => {
-            const ignoreTags = ['latest', 'master'];
-            client.listTags((error, tagsResult) => {
-                if (error) {
-                    client.close();
-                    reject(error);
-                }
-                Logger.log(`Found ${tagsResult.tags.length} tags for ${tagsResult.name}: ${JSON.stringify(tagsResult.tags)}`);
-
-                if (tagsResult.tags.indexOf(meta.tag) === -1) {
-                    return reject('Current tag not found');
-                }
-                async.parallel(tagsResult.tags.map((tag) => this.createManifestWrapper(client, meta, tag)), (err, results) => {
-                    resolve(results);
-                });
-            });
         });
     }
 

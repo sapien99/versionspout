@@ -1,6 +1,6 @@
 import { CompareServiceInterface } from '../compare.interface';
 import { Logger } from '@nestjs/common';
-import { DockerVersionInterface, DockerVersionTagInterface, DockerVersionHashInterface } from './docker.interface';
+import { DockerVersionInterface, DockerVersionTagInterface } from './docker.interface';
 
 export class DockerCompareRequestModel {
 
@@ -48,22 +48,27 @@ export class DockerCompareTagModel implements DockerVersionTagInterface {
 
     public tag: string;
     public created: Date | null;
-    public size: number;
+    public hashes: string[];    
 
-    constructor(tag: string, created: Date | null) {
+    constructor(tag: string, manifest: any) {
         this.tag = tag;
-        this.created = created;
-        this.size = 0;
-    }
+        this.created = null;
+        this.hashes = [];
 
+        if (manifest) {
+            this.created = manifest.created ? new Date(manifest.created) : null;    
+            this.hashes = [manifest.hashes[0]]; // just for now
+        }        
+    }
 }
 
 export class DockerCompareResultModel implements DockerVersionInterface {
 
     public readonly repository: string;
-    public readonly image: string;
+    public readonly image: string;    
     public readonly fetched: Date;
     public tags: DockerCompareTagModel[];
+    public allowedRange: string;
 
     constructor(repository: string, image: string, tags: DockerCompareTagModel[]) {
         this.repository = repository;

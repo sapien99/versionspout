@@ -33,25 +33,10 @@
                 </tr>
                 <tr>
                   <td class="content-block">
-                    Hello <%= user.firstName %> <%= user.lastName %>,<br>
+                    Hello <%= profile.email %>,<br>
                     welcome to summit15. We are glad you joined us.
                   </td>
-                </tr>
-                <tr>
-                  <td class="content-block">
-                    <h4>Please click on your activation code and enter it when asked. Doing this will activate your user</h4>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="content-block aligncenter">
-                    <h4>Your activation Code is</h4>
-                  </td>
-                </tr>
-                <tr style="border: solid 3px #000000">
-                  <td class="content-block aligncenter">
-                    <a href="<%= confirmationUrl %>" class="btn-extra"><%= code %></a>
-                  </td>
-                </tr>
+                </tr>                
               </table>
             </td>
           </tr>

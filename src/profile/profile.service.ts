@@ -7,19 +7,28 @@ import * as _ from 'lodash';
 import { DockerCompareRequestModel, DockerCompareResultModel } from '../docker/models/docker.model';
 import { DockerVersionService } from '../docker/docker.service';
 import { MailService } from '../mail/mail.service';
+import { MailOptions, Mail } from '../mail/models/mail.model';
 
 @Injectable()
 export class ProfileService {
-
+    
     /**
      * Save ProfileModel in db
      * @param profile
      */
     async createProfile(profile: ProfileModel) {        
-        // save profilemodel in db
-        const mongooseModel = new this.profileModel(profile);
-        mongooseModel._id = profile.email;
-        await mongooseModel.update({ upsert: true });                      
+        // TODO: send email about create
+        // save profilemodel in db       
+        const resp = await this.profileModel.findByIdAndUpdate( profile.email, profile, { upsert: true } );
+        
+        const mailOptions = new MailOptions();
+        mailOptions.to = profile.email;
+        mailOptions.subject = 'Welcome on summit15';
+        mailOptions.template = 'signup'                    
+        this.mailService.send(await this.mailService.compose(mailOptions, profile ));
+        
+        resp.notificationMailSent = true;        
+        return resp;
     }
 
     /**
@@ -27,16 +36,18 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async findProfile(email: string): Promise<ProfileModel | null> {        
-        return null;
+        // TODO: check permission
+        return this.profileModel.findById( email );
     }
 
     /**
      * Update existing ProfileModel
      * @param email email of the profiles user
      */
-    async updateProfile(email: string, profile: ProfileModel): Promise<ProfileModel | null> {        
-        // TODO: email must not be changed
-        return null;
+    async updateProfile(email: string, profile: ProfileModel): Promise<ProfileModel | null> {                
+        // TODO: send email about update
+        // TODO: check permission
+        return this.profileModel.findByIdAndUpdate( email, profile );
     }
 
     /**
@@ -44,8 +55,11 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async deleteProfile(email: string) {        
-        // TODO: email must exist
-        return null;
+        // TODO: send email about delete       
+        const profile = await this.profileModel.findById( email );
+        if (!profile)
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND); 
+        return this.profileModel.findByIdAndRemove( email );
     }
 
     /**
@@ -53,8 +67,30 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async inquireDockerVersions(email: string): Promise<DockerCompareResultModel[]> {        
-        // TODO: fetch versions from database for the specified user
-        return this._inquireDockerVersions([]);
+        // TODO: permission
+        const profile = await this.profileModel.findById( email );
+        if (!profile)
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+        return this._inquireDockerVersions(profile.dockerVersions);
+    }
+
+    /**
+     * Get Version comparison for docker artifacts of this profile
+     * @param email email of the profiles user
+     */
+    async sendNewsMail(email: string): Promise<any> {                
+        const profile = await this.profileModel.findById( email );
+        if (!profile)
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+        const dockerVersions = await this._inquireDockerVersions(profile.dockerVersions);
+
+        const mailOptions = new MailOptions();
+        mailOptions.to = profile.email;
+        mailOptions.subject = 'Your docker news';
+        mailOptions.template = 'news'                            
+        this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }));
+
+        return ;
     }
 
     /**

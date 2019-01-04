@@ -8,3 +8,14 @@ export class Mail {
   public html: string | undefined;
   public attachments: any;
 }
+
+export class MailOptions {
+  public from: string;
+  public to: string;
+  public cc: string | undefined;
+  public bcc: string | undefined;
+  public subject: string;
+  public template: string;    
+  public context: any;
+  public attachments: any;
+}

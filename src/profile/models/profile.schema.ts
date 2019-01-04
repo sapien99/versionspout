@@ -6,8 +6,11 @@ export const ProfileSchema = new mongoose.Schema({
     created: { type: Date, default: Date.now },
     updated: { type: Date },
     dockerVersions: [{
-        allowedRange: { type: String },
-        currentVersion: { type: String },
-        artifact: { type: String },
+        allowedRange: { type: String },        
+        repository: { type: String },
+        image: { type: String },            
+        tag: { type: String },            
     }]
+}, {
+    versionKey: false
 });
