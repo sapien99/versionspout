@@ -42,7 +42,7 @@
                     <table>
                       <% for(let i=0; i < dockerVersions.length; i++) { %>
                          <tr>
-                           <td><h3><%= dockerVersions[i].repository %>/<%= dockerVersions[i].image %> (<%= dockerVersions[i].allowedRange %>)</h3></td>                           
+                           <td><h3><%= dockerVersions[i].repository %>/<%= dockerVersions[i].image %> (<%= dockerVersions[i].semverRange %>)</h3></td>                           
                          </tr>
                          <% for(let j=0; j < dockerVersions[i].tags.length; j++) { %>
                          <tr>                            

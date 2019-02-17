@@ -1,53 +1,26 @@
-import { CompareServiceInterface } from '../compare.interface';
+import { IDockerService } from './../docker.service';
 import { Logger } from '@nestjs/common';
-import { DockerVersionInterface, DockerVersionTagInterface } from './docker.interface';
 
-export class DockerCompareRequestModel {
-
-    public readonly repository: string;
-    public readonly image: string;
-    public tag: string;
-    public hash: string | null;
-    public allowedRange: string | null;
-
-    public static service: CompareServiceInterface;
-
-    /**
-     * Create Model from versions string rancher/rancher:1.0 -> DockerModel
-     * @param artifactString
-     */
-    static createFromString(artifact: string, allowedRange: string | null): DockerCompareRequestModel {
-        const REGEX = /([\w]+):([\w\d-.]+)/gm;
-        let tag = 'latest';
-        const vals = artifact.split('/');
-        let image = vals.pop();
-        const repository = vals.join('/');
-        const match = REGEX.exec(image);
-        if (match) {
-            artifact = match[1];
-            tag = match[2];
-        }
-        Logger.log(`Extracted repository ${repository}, artifact ${artifact} and tag ${tag} from ${artifact}`);
-        return new DockerCompareRequestModel(repository, artifact, tag, null, allowedRange || '*');
-    }
-
-    public async fetchAndCompare(): Promise<DockerCompareResultModel> {
-        return DockerCompareRequestModel.service.fetchAndCompare(this);
-    }
-
-    constructor(repository: string, image: string, tag: string, hash: string | null, allowedRange: string | null) {
-        this.repository = repository;
-        this.image = image;
-        this.tag = tag;
-        this.allowedRange = allowedRange;
-    }
-
+export interface IDockerTag {
+    readonly tag: string;
+    isSemver: boolean;
+    readonly created: Date | null;        
+    readonly hashes: string[] | null;    
 }
 
-export class DockerCompareTagModel implements DockerVersionTagInterface {
+export interface IDockerImage {
+    readonly repository: string;
+    readonly image: string;    
+    readonly fetched: Date;
+    readonly tags: IDockerTag[];
+    readonly semverRange: string;
+}
+
+export class DockerTag implements IDockerTag {
 
     public tag: string;
     public created: Date | null;
+    public isSemver: boolean;
     public hashes: string[];    
 
     constructor(tag: string, manifest: any) {
@@ -62,18 +35,65 @@ export class DockerCompareTagModel implements DockerVersionTagInterface {
     }
 }
 
-export class DockerCompareResultModel implements DockerVersionInterface {
+export class DockerImage implements IDockerImage {
 
     public readonly repository: string;
     public readonly image: string;    
     public readonly fetched: Date;
-    public tags: DockerCompareTagModel[];
-    public allowedRange: string;
+    public tags: IDockerTag[];
+    public semverRange: string;
 
-    constructor(repository: string, image: string, tags: DockerCompareTagModel[]) {
+    constructor(repository: string, image: string, tags: DockerTag[]) {
         this.repository = repository;
         this.image = image;
         this.tags = tags;
+    }
+
+}
+
+/**
+ * A docker "profile" matching on image, repository and several tags
+ */
+export class DockerVersionMatch {
+
+    public readonly repository: string;
+    public readonly image: string;
+    public tag: string;
+    public hash: string | null;
+    public semverRange: string | null;
+    public ignoreTagsNotSemver: boolean;
+
+    public static service: IDockerService;
+
+    /**
+     * Create Model from versions string rancher/rancher:1.0 -> DockerModel
+     * @param artifactString
+     */
+    static createFromString(artifact: string, semverRange: string | null): DockerVersionMatch {
+        const REGEX = /([\w]+):([\w\d-.]+)/gm;
+        let tag = 'latest';
+        const vals = artifact.split('/');
+        let image = vals.pop();
+        const repository = vals.join('/');
+        const match = REGEX.exec(image);
+        if (match) {
+            artifact = match[1];
+            tag = match[2];
+        }
+        Logger.log(`Extracted repository ${repository}, artifact ${artifact} and tag ${tag} from ${artifact}`);
+        return new DockerVersionMatch(repository, artifact, tag, null, semverRange || '*');
+    }
+
+    public async fetchAndCompare(): Promise<DockerImage> {
+        return DockerVersionMatch.service.fetchAndCompare(this);
+    }
+
+    constructor(repository: string, image: string, tag: string, hash: string | null, semverRange: string | null) {
+        this.repository = repository;
+        this.image = image;
+        this.tag = tag;
+        this.semverRange = semverRange;
+        this.ignoreTagsNotSemver = false;
     }
 
 }

@@ -1,22 +1,26 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { DockerVersionInterface } from './models/docker.interface';
 import { Model } from 'mongoose';
 import * as semver from 'semver';
 import { InjectModel } from '@nestjs/mongoose';
 import * as async from 'async';
 import * as drc from 'docker-registry-client';
-import { DockerCompareResultModel, DockerCompareTagModel, DockerCompareRequestModel } from './models/docker.model';
-import { CompareServiceInterface } from './compare.interface';
+import { IDockerImage, DockerImage, DockerTag, DockerVersionMatch } from './models/docker.model';
 import * as _ from 'lodash';
 
+export interface IDockerService {
+
+    fetchAndCompare( data: DockerVersionMatch ): Promise<IDockerImage>;
+
+}
+
 @Injectable()
-export class DockerVersionService implements CompareServiceInterface {
+export class DockerService implements IDockerService {
 
     /**
      * Create Model from versions string rancher/rancher:1.0 -> DockerModel
      * @param artifactString
      */
-    createModelFromString(artifactString: string): DockerCompareRequestModel {
+    createModelFromString(artifactString: string): DockerVersionMatch {
         const REGEX = /([\w]+):([\w\d-.]+)/gm;
         let tag = 'latest';
         const vals = artifactString.split('/');
@@ -28,27 +32,27 @@ export class DockerVersionService implements CompareServiceInterface {
             tag = match[2];
         }
         Logger.log(`Extracted repository ${repository}, artifact ${artifact} and tag ${tag} from ${artifactString}`);
-        return new DockerCompareRequestModel(repository, artifact, tag, null, '*');
+        return new DockerVersionMatch(repository, artifact, tag, null, '*');
     }
 
     /**
      * Fetch and compare multiple Tags and Versions
      * @param data
      */
-    async fetchAndCompareMany( data: DockerCompareRequestModel[] ): Promise<DockerCompareResultModel[]> {
+    async fetchAndCompareMany( data: DockerVersionMatch[] ): Promise<DockerImage[]> {
         if (!_.isArray(data))
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);
-        return Promise.all(data.map((meta: DockerCompareRequestModel) => this.fetchAndCompare(meta)));
+        return Promise.all(data.map((meta: DockerVersionMatch) => this.fetchAndCompare(meta)));
     }
 
     /**
      * Fetch and compare single Tag Versions
      * @param data
      */
-    async fetchAndCompare( meta: DockerCompareRequestModel ): Promise<DockerCompareResultModel> {
+    async fetchAndCompare( meta: DockerVersionMatch ): Promise<DockerImage> {
         if (!_.isObject(meta))
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);
-        return this.filterSemverVersions(meta, ['latest', 'master', 'develop']);            
+        return this.filterSemverVersions(meta);            
     }
 
     /**
@@ -77,9 +81,9 @@ export class DockerVersionService implements CompareServiceInterface {
      * Fetch Version, either from cache or from repo
      * @param meta 
      */
-    async fetchVersions( meta: DockerCompareRequestModel): Promise<DockerCompareResultModel> {        
+    async fetchVersions( meta: DockerVersionMatch): Promise<DockerImage> {        
         const client = drc.createClientV2({name: `${meta.repository}/${meta.image}`});
-        return new Promise<DockerCompareResultModel>(async (resolve, reject) => {
+        return new Promise<DockerImage>(async (resolve, reject) => {
             // if we have a valid cache entry serve from cache
             const _id = `${meta.repository}/${meta.image}`;
             const cachedEntry = await this.dockerVersionModel.findById(_id);
@@ -99,7 +103,7 @@ export class DockerVersionService implements CompareServiceInterface {
                 }          
                                             
                 // get manifest for each tag. Done as a separate step to preserve order
-                let cacheEntry: DockerCompareResultModel = new DockerCompareResultModel(meta.repository, meta.image, []);                
+                let cacheEntry: DockerImage = new DockerImage(meta.repository, meta.image, []);                
                 const tagMap = {};
                 await Promise.all(tagsResult.tags.map(async (tag) => {
                     let manifest = await this.createManifestWrapper(client, tag);                    
@@ -107,7 +111,7 @@ export class DockerVersionService implements CompareServiceInterface {
                 }));
 
                 tagsResult.tags.reverse().forEach((tag) => {                    
-                    cacheEntry.tags.push(new DockerCompareTagModel(tag, tagMap[tag]));
+                    cacheEntry.tags.push(new DockerTag(tag, tagMap[tag]));
                 });
                 
                 // save data in cache
@@ -124,40 +128,36 @@ export class DockerVersionService implements CompareServiceInterface {
      * Filter semver Versions from entried we read
      * @param data
      */
-    async filterSemverVersions( meta: DockerCompareRequestModel , ignoreSemverTagCheck: string[]): Promise<DockerCompareResultModel> {        
-        return new Promise<DockerCompareResultModel>(async (resolve, reject) => {
+    async filterSemverVersions( meta: DockerVersionMatch): Promise<DockerImage> {        
+        return new Promise<DockerImage>(async (resolve, reject) => {
             // fetch data
-            const tagsResult: DockerCompareResultModel = await this.fetchVersions(meta)
+            const tagsResult: DockerImage = await this.fetchVersions(meta)
             Logger.log(`Found ${tagsResult.tags.length} tags for ${tagsResult.repository}/${tagsResult.image}`);
             // filter the tags we need
-            const filtered = tagsResult.tags.filter((tagObj) => {
-                // if our current tag is latest we assume to be always on the last state
-                if (tagObj.tag === 'latest') {
-                    // TODO: compare by hash ??
-                    return true;
-                }
+            const filtered = tagsResult.tags.filter((tagObj) => {                
                 if (semver.valid(tagObj.tag)) {
                     let keep = true;
                     if (meta.tag) {
                         keep = semver.gte(tagObj.tag, meta.tag);
-                        if (keep && meta.allowedRange)
-                        keep = semver.satisfies(tagObj.tag, meta.allowedRange);
-                        Logger.log(`${meta.image} ${meta.tag} < ${tagObj.tag} -> ${meta.allowedRange} -> ${keep}`);
-                    }                        
+                        if (keep && meta.semverRange)
+                        keep = semver.satisfies(tagObj.tag, meta.semverRange);
+                        Logger.log(`${meta.image} ${meta.tag} < ${tagObj.tag} -> ${meta.semverRange} -> ${keep}`);
+                    }     
+                    tagObj.isSemver = true;                
                     return keep;
-                }
-                // if the tag is invalid semver but in the whitelist let it pass
-                return ignoreSemverTagCheck.indexOf(tagObj.tag) > -1;
+                }                
+                tagObj.isSemver = false;                
+                return true; 
             });
             tagsResult.tags = filtered;
             Logger.log(`Shrinked list down to ${JSON.stringify(tagsResult.tags.length)} for ${tagsResult.repository}/${tagsResult.image}: ${JSON.stringify(tagsResult.tags)}`);
-            tagsResult.allowedRange = meta.allowedRange;
+            tagsResult.semverRange = meta.semverRange;
             resolve(tagsResult);
         });
     }
 
     constructor(
-        @InjectModel('DockerVersion') private readonly dockerVersionModel: Model<DockerVersionInterface>,
+        @InjectModel('DockerVersion') private readonly dockerVersionModel: Model<IDockerImage>,
     ) {}
 
 }

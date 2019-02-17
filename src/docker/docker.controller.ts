@@ -1,11 +1,11 @@
 import {Get, Post, Controller, Body, HttpCode} from '@nestjs/common';
-import { DockerVersionService } from './docker.service';
+import { DockerService } from './docker.service';
 import { Logger } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { DockerCompareRequestModel, DockerCompareResultModel } from './models/docker.model';
+import { DockerVersionMatch, DockerImage } from './models/docker.model';
 
 
 @Controller('docker-versions')
@@ -14,7 +14,7 @@ export class DockerVersionController {
 
     @Post()
     @HttpCode(200)
-    async fetchVersions(@Body(new ValidationPipe({transform: true})) body: DockerCompareRequestModel[]) {        
+    async fetchVersions(@Body(new ValidationPipe({transform: true})) body: DockerVersionMatch[]) {        
         return await this.dockerService.fetchAndCompareMany(body);
     }
 
@@ -31,16 +31,16 @@ export class DockerVersionController {
     async k8sImport(@Body(new ValidationPipe({transform: true})) body: string) {
         const test = 'prom/prometheus:v2.2.0';
         // split input string (separated by blank)
-        const requests: DockerCompareRequestModel[] = test.split(' ')
+        const requests: DockerVersionMatch[] = test.split(' ')
             .map((artifact) => {
                 // TODO: we should be able to remove this
-                const model: DockerCompareRequestModel = this.dockerService.createModelFromString(artifact);
-                return new DockerCompareRequestModel(model.repository, model.image, model.tag, null, null);
-            }) as DockerCompareRequestModel[];
-        return await Promise.all(requests.map((meta: DockerCompareRequestModel) => meta.fetchAndCompare()));
+                const model: DockerVersionMatch = this.dockerService.createModelFromString(artifact);
+                return new DockerVersionMatch(model.repository, model.image, model.tag, null, null);
+            }) as DockerVersionMatch[];
+        return await Promise.all(requests.map((meta: DockerVersionMatch) => meta.fetchAndCompare()));
     }
 
-    constructor(private readonly dockerService: DockerVersionService ) {
-        DockerCompareRequestModel.service = dockerService;
+    constructor(private readonly dockerService: DockerService ) {
+        DockerVersionMatch.service = dockerService;
     }
 }

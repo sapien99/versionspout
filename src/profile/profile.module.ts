@@ -1,20 +1,25 @@
-import { Module } from '@nestjs/common';
+import { Module, HttpModule } from '@nestjs/common';
 import { ProfileController } from './profile.controller';
-import { ProfileSchema} from './models/profile.schema';
+import { UserProfileSchema, NotificationStatusSchema } from './models/profile.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProfileService } from './profile.service';
 import { MailModule } from '../mail/mail.module';
 import { DockerModule } from '../docker/docker.module';
 
 @Module({
-    imports: [                      
+    imports: [       
+        HttpModule,               
         MailModule,
         DockerModule,
         MongooseModule.forFeature([
             {
-                name: 'Profile',
-                schema: ProfileSchema,
+                name: 'UserProfile',
+                schema: UserProfileSchema,
             },
+            {
+                name: 'NotificationStatus',
+                schema: NotificationStatusSchema,
+            },            
         ]),
     ],
     exports: [

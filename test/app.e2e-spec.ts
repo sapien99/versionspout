@@ -46,7 +46,7 @@ describe('AppController (e2e)', () => {
 
   });
 
-  describe('DockerVersion (e2e)', () => {    
+  describe('Docker (e2e)', () => {    
 
     let foo = 1;
     it('/docker-versions/ (POST) with tag specified should return an Array of Docker Versions', () => {
@@ -55,7 +55,7 @@ describe('AppController (e2e)', () => {
         .set('Content-Type', 'application/json')
         .send([
           {
-            "allowedRange":"*",
+            "semverRange":"*",
             "repository": "prom",
             "image":"prometheus",
             "tag":"2.2.0"
@@ -75,7 +75,7 @@ describe('AppController (e2e)', () => {
         .set('Content-Type', 'application/json')
         .send([
           {
-            "allowedRange":"*",
+            "semverRange":"*",
             "repository": "prom",
             "image":"prometheus",
           },          
@@ -92,7 +92,7 @@ describe('AppController (e2e)', () => {
         .post('/docker-versions')
         .set('Content-Type', 'application/json')
         .send({
-          "allowedRange":"*",
+          "semverRange":"*",
           "repository": "prom",
           "image":"prometheus",
         })
@@ -146,13 +146,13 @@ describe('AppController (e2e)', () => {
             "email": "michael.ferjancic@gmail.com",
             "dockerVersions": [
               {
-                "allowedRange":"*",
+                "semverRange":"*",
                 "repository": "prom",
                 "image":"prometheus",
                 "tag":"2.2.0",
               },
               {
-                "allowedRange":"^2.4.0",
+                "semverRange":"^2.4.0",
                 "repository": "grafana",
                 "image":"grafana",
                 "tag":"2.2.0"

@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ProfileModel } from './models/profile.model';
+import { IUserProfile } from './models/profile.model';
 
 
 @Controller('profiles')
@@ -13,7 +13,7 @@ import { ProfileModel } from './models/profile.model';
 export class ProfileController {
 
     @Post()
-    async create(@Body(new ValidationPipe({transform: true})) body: ProfileModel) {
+    async create(@Body(new ValidationPipe({transform: true})) body: IUserProfile) {
         return await this.profileService.createProfile(body);
     }
 
@@ -24,16 +24,17 @@ export class ProfileController {
 
     @Get(':id/docker-versions')
     async inquireVersions(@Param('id') id) {
-        return await this.profileService.inquireDockerVersions(id);
+        // TODO: handle delta variable
+        return await this.profileService.inquireDockerVersions(id, true);
     }
 
-    @Get(':id/news')
-    async sendNewsMail(@Param('id') id) {
-        return await this.profileService.sendNewsMail(id);
+    @Get(':id/docker-notifications')
+    async doNotifications(@Param('id') id) {        
+        return await this.profileService.doNotifications(id);
     }
 
     @Put(':id')
-    async update(@Param('id') id, @Body(new ValidationPipe({transform: true})) body: ProfileModel) {
+    async update(@Param('id') id, @Body(new ValidationPipe({transform: true})) body: IUserProfile) {
         return await this.profileService.updateProfile(id, body);
     }
 

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { HttpModule} from '@nestjs/common';
 import { DockerVersionController } from './docker.controller';
-import { DockerVersionSchema} from './models/dockerVersion.schema';
+import { DockerVersionSchema} from './models/docker.schema';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DockerVersionService } from './docker.service';
+import { DockerService } from './docker.service';
 
 @Module({
     imports: [        
@@ -15,9 +15,9 @@ import { DockerVersionService } from './docker.service';
         ]),
     ],
     exports: [
-        DockerVersionService
+        DockerService
     ],
     controllers: [DockerVersionController],
-    providers: [DockerVersionService],
+    providers: [DockerService],
 })
 export class DockerModule {}

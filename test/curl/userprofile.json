@@ -1,0 +1,29 @@
+{
+  "email":"michael.ferjancic@gmail.com", 
+  "notificationChannels": [
+    {
+      "name": "mail",
+      "config": {
+        "html": false
+      }
+    },
+    {
+      "type": "webhook",
+      "config": {
+        "url": "http://localhost:3001"
+      }
+    }
+  ],
+  "defaults": {
+    "semverignorePattern": [],
+    "notificationChannels": ["email"]
+  },
+  "subscribedDockerVersions": [
+    {
+      "semverRange":"*",
+      "repository": "prom",
+      "image":"prometheus",
+      "tag":"2.2.0"
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import * as mongoose from 'mongoose';
 
 export const DockerVersionTagSchema = new mongoose.Schema({
-    tag: { type: String },    
+    tag: { type: String },
+    isSemver: { type: Boolean },
     created: { type: Date },        
     hashes: [{ type: String }],    
 }, { _id: false, versionKey: false })
