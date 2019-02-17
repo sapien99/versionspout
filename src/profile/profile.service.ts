@@ -62,14 +62,35 @@ export class ProfileService {
     }
 
     /**
-     * Get Version comparison for docker artifacts of this profile
+     * Get Version comparison for docker artifacts of this profile. This one
+     * is stateless and will return the matching versions
      * @param email email of the profiles user
      */
-    async inquireDockerVersions(email: string, delta: boolean): Promise<IDockerImage[]> {
+    async inquireDockerVersions(email: string): Promise<IDockerImage[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-        return this._inquireDockerVersionsForChannel(profile, 'ws', delta);
+        return this._inquireDockerVersionsForChannel(profile, 'ws', false);
+    }                        
+
+    /**
+     * Get Version comparison for docker artifacts of this profile. This one
+     * is stateful and will return only the ones not sent before
+     * @param email email of the profiles user
+     */
+    async inquireDockerVersionNews(email: string): Promise<IDockerImage[]> {
+        const profile: IUserProfile = await this.profileModel.findById( email );
+        if (!profile)
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
+        const dockerVersions = await this._inquireDockerVersionsForChannel(profile, 'ws', true);
+        // now create status objects and save them
+        await Promise.all(dockerVersions.map((image) => {
+            return Promise.all(image.tags.map((tag) => {
+                const status = new NotificationStatus(profile.email, 'ws', image.image, tag.tag);                
+                return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+            }));
+        }));
+        return dockerVersions;
     }                        
 
     /**
@@ -118,14 +139,10 @@ export class ProfileService {
     }
 
     /**
-     * Get Version comparison for docker artifacts of this profile
-     * @param email email of the profiles user
+     * Email notifications
+     * @param profile 
      */
-    async doNotifications(email: string) {                        
-        const profile: IUserProfile = await this.profileModel.findById( email );
-        if (!profile)
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-            
+    async _handleMailNotification(profile: IUserProfile) {
         // care about mail - send a summary if we have any news
         let dockerVersions = await this._inquireDockerVersionsForChannel(profile, 'mail', true);
         dockerVersions = dockerVersions.filter((image) => image.tags.length > 0);
@@ -134,16 +151,46 @@ export class ProfileService {
             mailOptions.to = profile.email;
             mailOptions.subject = 'Your docker news';
             mailOptions.template = 'news'                            
-            this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }));
+            this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }));            
+            // now create status objects and save them
+            await Promise.all(dockerVersions.map((image) => {
+                return Promise.all(image.tags.map((tag) => {
+                    const status = new NotificationStatus(profile.email, 'mail', image.image, tag.tag);                
+                    return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                }));
+            }));
         }        
-        
+    }
+
+    /**
+     * Save NotificationStatus object and return it if it was newly created - or null otherwise
+     * @param profile 
+     * @param channel 
+     * @param image 
+     * @param tag 
+     */
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, allowedNonSemverpatterns: string[]) {                                
+        const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
+        const allowedRegexes = allowedNonSemverpatterns.forEach((pattern) => new RegExp(pattern))
+        const notificationStatus = await this.notifcationstatusModel.findById( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
+        if (!tag.isSemver && _.some(allowedRegexes, (regx) => regx.match(tag)))
+            return tag;
+        if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
+            return tag;
+        return null;
+    }
+
+    /**
+     * Additionan Notifications (webhook etc.)
+     * @param profile 
+     */
+    async _handlAdditinalNotifications(profile: IUserProfile) {
+        // care about webhooks - call them fire and forget
         const versions = await Promise.all(profile.notificationChannels.map(async (channel) => {
             if (channel.type == 'mail') 
                 return [];
             return await this._inquireDockerVersionsForChannel(profile, channel.name, true);
         }));
-        
-        // care about webhooks - call them fire and forget
         profile.notificationChannels.map(async (channel, index) => {                        
             if (channel.type == 'webhook') {                
                 return Promise.all(versions[index].map((image) => {
@@ -161,36 +208,32 @@ export class ProfileService {
                             }
                         };
                         return this.httpService.axiosRef(channel.config)
-                        .then(() => {
-                            Logger.log(`webhook ${channel.config.url} of channel ${channel} called because ${image.image}:${tag.tag}`);
+                        .then(async () => {
+                            Logger.log(`webhook ${channel.config.url} of channel ${channel.name} called because ${image.image}:${tag.tag}`);
+                            const status = new NotificationStatus(profile.email, channel.name, image.image, tag.tag);                
+                            await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
                         })
                         .catch(async (e) => {
-                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel}, called because ${image.image}:${tag.tag}`);                            
-                            // delete notificationstatus to send again in next try
-                            await this.notifcationstatusModel.findOneAndRemove( { email: profile.email, channel: channel.name, image: image.image, tag:tag.tag });                                                                                    
+                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${image.image}:${tag.tag}): ${e.message}`);                            
                         })
                     }));
                 }));                
             }
-        });        
+        });  
     }
 
     /**
-     * Save NotificationStatus object and return it if it was newly created - or null otherwise
-     * @param profile 
-     * @param channel 
-     * @param image 
-     * @param tag 
+     * Get Version comparison for docker artifacts of this profile
+     * @param email email of the profiles user
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, allowNonSemverpatterns: string[]) {                        
-        // TODO: only check, and write on notification. Think about how to deal with ws type then
-        const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
-        const notificationStatus = await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
-        if (!tag.isSemver) // TODO: check allowNonSemverpatterns, allow if match
-            return null;
-        if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
-            return tag;
-        return null;
+    async doNotifications(email: string) {                        
+        const profile: IUserProfile = await this.profileModel.findById( email );
+        if (!profile)
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
+        // mail notifications
+        this._handleMailNotification(profile);        
+        // webhook notifications
+        this._handlAdditinalNotifications(profile);      
     }
 
     constructor(                

@@ -22,7 +22,8 @@ export const NotificationChannelSchema = new mongoose.Schema({
 
 export const UserProfileSchema = new mongoose.Schema({    
     _id: { type: String },
-    email: String,
+    email: { type: String },
+    htmlEmail: { type: Boolean, default: true },
     created: { type: Date, default: Date.now },
     updated: { type: Date },
     

@@ -1,12 +1,7 @@
 {
   "email":"michael.ferjancic@gmail.com", 
+  "htmlEmail": true,
   "notificationChannels": [
-    {
-      "name": "mail",
-      "config": {
-        "html": false
-      }
-    },
     {
       "type": "webhook",
       "config": {

@@ -23,9 +23,13 @@ export class ProfileController {
     }
 
     @Get(':id/docker-versions')
-    async inquireVersions(@Param('id') id) {
-        // TODO: handle delta variable
-        return await this.profileService.inquireDockerVersions(id, true);
+    async inquireVersions(@Param('id') id) {        
+        return await this.profileService.inquireDockerVersions(id);
+    }
+
+    @Get(':id/docker-news')
+    async inquireNews(@Param('id') id) {        
+        return await this.profileService.inquireDockerVersionNews(id);
     }
 
     @Get(':id/docker-notifications')

@@ -17,7 +17,8 @@ export interface INotificationStatus {
 }
 
 export interface IUserProfile {
-    readonly email: string;    
+    readonly email: string;
+    readonly htmlEmail: boolean;
     readonly notificationChannels : INotificationChannel[];
     readonly defaults: {
         notificationChannels: string[],        
@@ -35,6 +36,7 @@ export class UserProfile implements IUserProfile {
     @IsNotEmpty()
     @IsEmail()
     public readonly email: string;
+    public readonly htmlEmail: boolean;
     // configured notification channels     
     public notificationChannels :INotificationChannel[];    
     // defaults
