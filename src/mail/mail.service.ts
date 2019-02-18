@@ -16,7 +16,7 @@ export class MailService {
     private static transporter: any;
     private static _renderFile;
 
-    public async compose(config: MailOptions, data: any): Promise<Mail> {
+    public async compose(config: MailOptions, data: any, sendHtmlMail: boolean): Promise<Mail> {
       const composedMail = new Mail();
 
       Logger.log('composing email to ', config.to);
@@ -28,15 +28,17 @@ export class MailService {
       composedMail.to = globals.mail.to || config.to;
       composedMail.cc = globals.mail.cc || config.cc;
       composedMail.bcc = globals.mail.bcc || config.bcc;
-      composedMail.subject = globals.mail.subject || config.subject;
-      composedMail.text = await MailService._renderFile(textPath, emailData);
-      composedMail.html = await MailService._renderFile(htmlPath, emailData);
-      composedMail.attachments = _.map(globals.mail.attachments || config.attachments, (attachment) => {
-        return {
-          path: path.join(globals.path.assets, 'mailtemplates', 'images', attachment),
-          cid: 'header'
-        }
-      });
+      composedMail.subject = globals.mail.subject || config.subject;      
+      composedMail.text = await MailService._renderFile(textPath, emailData);      
+      if (sendHtmlMail) {
+        composedMail.html = await MailService._renderFile(htmlPath, emailData);
+        composedMail.attachments = _.map(globals.mail.attachments || config.attachments, (attachment) => {
+          return {
+            path: path.join(globals.path.assets, 'mailtemplates', 'images', attachment),
+            cid: 'header'
+          }
+        });
+      }
 
       return composedMail;
     }

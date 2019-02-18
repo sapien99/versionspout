@@ -24,7 +24,7 @@ export class ProfileService {
         mailOptions.to = profile.email;
         mailOptions.subject = 'Welcome on summit15';
         mailOptions.template = 'signup'                    
-        this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile} ));
+        this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
         resp.notificationMailSent = true;
         
         return resp;
@@ -151,7 +151,7 @@ export class ProfileService {
             mailOptions.to = profile.email;
             mailOptions.subject = 'Your docker news';
             mailOptions.template = 'news'                            
-            this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }));            
+            this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }, profile.htmlEmail));            
             // now create status objects and save them
             await Promise.all(dockerVersions.map((image) => {
                 return Promise.all(image.tags.map((tag) => {

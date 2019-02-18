@@ -1,1 +1,7 @@
-//TODO: support text mails
+<% for(let i=0; i < dockerVersions.length; i++) { %>
+<%= dockerVersions[i].repository %>/<%= dockerVersions[i].image %> (<%= dockerVersions[i].semverRange %>)
+    <% for(let j=0; j < dockerVersions[i].tags.length; j++) { %>
+    <%= dockerVersions[i].tags[j].tag %>
+    <%= dockerVersions[i].tags[j].created %>    
+    <% } %>
+ <% } %>
