@@ -107,7 +107,7 @@ export class ProfileService {
         return _.without(await Promise.all(versions.map(async (dockerImage: DockerImage) => {
 
             // get request to read channels
-            const requirement = this._getSubscribedDockerVersion(profile, dockerImage)
+            const requirement: DockerVersionProfile = this._getSubscribedDockerVersion(profile, dockerImage)
             let validNotificationChannels = requirement.notificationChannels;
             if (!validNotificationChannels || validNotificationChannels.length == 0) validNotificationChannels = profile.defaults.notificationChannels || [];
             // add the webservice channel in all cases - is used for the inquire via rest
@@ -116,16 +116,19 @@ export class ProfileService {
             if (validNotificationChannels.indexOf(channel) == -1) {
                 return null;
             } 
-            // if in "delta mode" we just return the tags since the last call
-            if (delta) {
-                dockerImage.tags = _.without(await Promise.all(dockerImage.tags.map((tag) => this._checkNotificationStatus(
-                    profile, // profile
-                    channel, 
-                    dockerImage.image, 
-                    tag, // the whole tag object
-                    [] // regex which non-semver versions are allowed                
-                    ))), null);
-            } 
+            let ignorePatterns = requirement.ignorePatterns;
+            if (!ignorePatterns || ignorePatterns.length == 0)
+                ignorePatterns = profile.defaults.ignorePatterns || [];                                    
+            // if in "delta mode" we just return the tags since the last call            
+            dockerImage.tags = _.without(await Promise.all(dockerImage.tags.map((tag) => this._checkNotificationStatus(
+                profile, // profile
+                channel, 
+                dockerImage.image, 
+                tag, // the whole tag object
+                ignorePatterns, // regex which non-semver versions are allowed                                
+                delta,                
+                requirement.semverRange.length > 0
+                ))), null);            
 
             return dockerImage;
         })), null);
@@ -169,15 +172,20 @@ export class ProfileService {
      * @param image 
      * @param tag 
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, allowedNonSemverpatterns: string[]) {                                
-        const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
-        const allowedRegexes = allowedNonSemverpatterns.forEach((pattern) => new RegExp(pattern))
-        const notificationStatus = await this.notifcationstatusModel.findById( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
-        if (!tag.isSemver && _.some(allowedRegexes, (regx) => regx.match(tag)))
-            return tag;
-        if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
-            return tag;
-        return null;
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, ignorePatterns: string[], forceState:boolean, forceSemver:boolean) {                                
+        console.log('CheckNotificationStatus called with', ignorePatterns)                
+        // ignore everything matching a regex in the ignorepatterns        
+        if (forceSemver && !tag.isSemver)
+            return null;
+        if (_.some(ignorePatterns, (pattern) => tag.tag.match(new RegExp(pattern))))
+            return null;        
+        if (forceState) {
+            const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
+            const notificationStatus = await this.notifcationstatusModel.findById( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
+            if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
+                return tag;
+        }
+        return tag;
     }
 
     /**

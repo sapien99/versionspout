@@ -22,14 +22,14 @@ export interface IUserProfile {
     readonly notificationChannels : INotificationChannel[];
     readonly defaults: {
         notificationChannels: string[],        
-        semverIgnorePatterns: string[],
+        ignorePatterns: string[]        
     }
     readonly subscribedDockerVersions: DockerVersionProfile[];        
 }
 
 export class DockerVersionProfile extends DockerVersionMatch {
     public notificationChannels: string[]
-    public semverIgnorePatterns: string[]
+    public ignorePatterns: string[]    
 }
 
 export class UserProfile implements IUserProfile {
@@ -42,7 +42,7 @@ export class UserProfile implements IUserProfile {
     // defaults
     public defaults: {
         notificationChannels: string[],        
-        semverIgnorePatterns: string[],
+        ignorePatterns: string[],        
     }
     // docker version profile - semver
     @IsNotEmpty()

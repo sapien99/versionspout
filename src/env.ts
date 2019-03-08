@@ -10,6 +10,8 @@ function readSmtpConfig(configpath, secretpath) {
   if (path) {
     const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));
     const secret = yaml.safeLoad(fs.readFileSync(secretpath, 'utf8'));
+    if (!config.smtp || !config.smtp.enabled)
+      return {}
     return {
       host: config.smtp.host,
       port: config.smtp.port || 25,
@@ -66,9 +68,8 @@ export const globals = {
     getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')
   ),
   path: {
-    root: path.join(__dirname, '..'),
-    profiles: path.join(__dirname, '..', 'mounts', 'profiles'),
-    assets: path.join(__dirname, '..', 'mounts', 'assets'),
+    root: path.join(__dirname, '..'),    
+    assets: getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'assets'),
   },
   log: {
     level: getOsEnv('LOG_LEVEL'),
