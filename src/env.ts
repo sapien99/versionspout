@@ -11,8 +11,11 @@ function readSmtpConfig(configpath, secretpath) {
     const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));
     const secret = yaml.safeLoad(fs.readFileSync(secretpath, 'utf8'));
     if (!config.smtp || !config.smtp.enabled)
-      return {}
+      return {
+        enabled: false
+      }
     return {
+      enabled: true,
       host: config.smtp.host,
       port: config.smtp.port || 25,
       user: secret.smtp.user,      

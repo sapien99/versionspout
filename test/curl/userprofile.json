@@ -29,7 +29,7 @@
                 "master", 
                 ".*rc.*"
             ], 
-            "semverRange" : ">2.7", 
+            "semverRange" : ">2.7.0", 
             "repository" : "prom", 
             "image" : "prometheus", 
             "tag" : "2.2.0"

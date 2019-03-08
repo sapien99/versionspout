@@ -1,3 +1,4 @@
+import { globals } from './../env';
 import { HttpException, HttpStatus, Injectable, Logger, HttpService} from '@nestjs/common';
 import { IUserProfile, INotificationStatus, NotificationStatus, DockerVersionProfile } from './models/profile.model';
 import { Model } from 'mongoose';
@@ -20,12 +21,14 @@ export class ProfileService {
         let resp = await this.profileModel.findByIdAndUpdate( profile.email, profile, { upsert: true, new: true, setDefaultsOnInsert: true } );                
         Logger.log(`Profile ${profile.email} touched`);
         
-        const mailOptions = new MailOptions();
-        mailOptions.to = profile.email;
-        mailOptions.subject = 'Welcome on summit15';
-        mailOptions.template = 'signup'                    
-        this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
-        resp.notificationMailSent = true;
+        if (globals.mail.enabled) {
+            const mailOptions = new MailOptions();
+            mailOptions.to = profile.email;
+            mailOptions.subject = 'Welcome on summit15';
+            mailOptions.template = 'signup'                    
+            this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
+            resp.notificationMailSent = true;
+        }
         
         return resp;
     }
@@ -172,8 +175,7 @@ export class ProfileService {
      * @param image 
      * @param tag 
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, ignorePatterns: string[], forceState:boolean, forceSemver:boolean) {                                
-        console.log('CheckNotificationStatus called with', ignorePatterns)                
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, ignorePatterns: string[], forceState:boolean, forceSemver:boolean) {                                        
         // ignore everything matching a regex in the ignorepatterns        
         if (forceSemver && !tag.isSemver)
             return null;
@@ -184,6 +186,8 @@ export class ProfileService {
             const notificationStatus = await this.notifcationstatusModel.findById( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
             if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
                 return tag;
+            else
+                return null;
         }
         return tag;
     }
