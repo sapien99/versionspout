@@ -8,11 +8,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { DockerVersionMatch, DockerImage } from './models/docker.model';
 
 
-@Controller('docker-versions')
+@Controller('docker')
 // @UseGuards(AuthGuard('bearer'))
 export class DockerVersionController {
 
-    @Post()
+    @Post('/api/docker-versions')
     @HttpCode(200)
     async fetchVersions(@Body(new ValidationPipe({transform: true})) body: DockerVersionMatch[]) {        
         return await this.dockerService.fetchAndCompareMany(body);
@@ -29,7 +29,7 @@ export class DockerVersionController {
     @Post('/k8s-import')
     @HttpCode(200)
     async k8sImport(@Body(new ValidationPipe({transform: true})) body: string) {
-        const test = 'prom/prometheus:v2.2.0';
+        const test = 'prom/prometheus:v2.2.0 grafana/grafana:5.2.2';
         // split input string (separated by blank)
         const requests: DockerVersionMatch[] = test.split(' ')
             .map((artifact) => {

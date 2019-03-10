@@ -1,9 +1,9 @@
 import { DockerVersionMatch } from '../../docker/models/docker.model';
 import { IsNotEmpty, IsEmail } from 'class-validator';
 
-export interface INotificationChannel {
-    readonly name: string;    
-    readonly type: string,
+export interface INotificationChannel {    
+    readonly name: string;        
+    readonly type: string,    
     readonly config: any;    
 }
 
@@ -27,39 +27,41 @@ export interface IUserProfile {
     readonly subscribedDockerVersions: DockerVersionProfile[];        
 }
 
-export class DockerVersionProfile extends DockerVersionMatch {
-    public notificationChannels: string[]
+export class DockerVersionProfile extends DockerVersionMatch {    
+    public notificationChannels: string[]    
     public ignorePatterns: string[]    
 }
 
-export class UserProfile implements IUserProfile {
+export class UserProfileDefaults {    
+    public notificationChannels: string[]                  
+    public ignorePatterns: string[]   
+}
+
+export class UserProfile implements IUserProfile {    
     @IsNotEmpty()
     @IsEmail()
-    public readonly email: string;
+    public readonly email: string;    
     public readonly htmlEmail: boolean;
-    // configured notification channels     
+    // configured notification channels    
     public notificationChannels :INotificationChannel[];    
-    // defaults
-    public defaults: {
-        notificationChannels: string[],        
-        ignorePatterns: string[],        
-    }
-    // docker version profile - semver
+    // defaults    
+    public defaults: UserProfileDefaults;        
+    // docker version profile - semver    
     @IsNotEmpty()
     public readonly subscribedDockerVersions: DockerVersionProfile[];        
-
+    
     constructor(email: string, dockerVersions: DockerVersionProfile[]) {
         this.email = email;
         this.subscribedDockerVersions = dockerVersions;    
     }
 }
 
-export class NotificationStatus implements INotificationStatus {
-    readonly _id: string; 
-    readonly email: string; 
-    readonly image: string; 
-    readonly tag: string; 
-    readonly channel: string; 
+export class NotificationStatus implements INotificationStatus {    
+    readonly _id: string;     
+    readonly email: string;     
+    readonly image: string;     
+    readonly tag: string;     
+    readonly channel: string;     
     readonly date: Date;
 
     public static createKey(email: string, channel:string, image:string, tag:string) {                

@@ -1,0 +1,361 @@
+openapi: 3.0.1
+info:
+  title: Spout
+  description: 'Notifications for Docker Versions'
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Spout
+  url: http://docker-spout.com
+servers:
+#- url: https://docspout.com
+- url: http://docspout.com:3000
+tags:
+- name: profile
+  description: User Profile
+- name: docker
+  description: Docker Registry
+- name: system
+  description: System internal
+paths:
+  /healthz:
+    get:
+      tags:
+      - system
+      summary: health
+      description: healthcheck, returns OK if server is up
+      operationId: getHealth
+      responses:
+        200:
+          description: successful operation
+          content: {}
+  /api/profiles:
+    post:
+      tags:
+      - profile
+      summary: Add a new user profile
+      operationId: addProfile
+      requestBody:
+        description: Userprofile 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+        required: true
+      responses:
+        201:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        409:
+          description: Invalid state
+          content: {}
+        422:
+          description: Invalid input
+          content: {}
+      security:
+      - docspout_auth:
+        - write:profile
+        - read:profile
+  /api/profiles/{profileId}:
+    get:
+      tags:
+      - profile
+      summary: get profile
+      operationId: getProfile
+      parameters:
+      - name: profileId
+        in: path
+        description: Profile to fetch
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        404:
+          description: Profile not found
+          content: {}
+      security:
+      - docspout_auth:
+        - write:profile
+        - read:profile
+    put:
+      tags:
+      - profile
+      summary: Update an existing profile
+      operationId: updateProfile
+      parameters:
+      - name: profileId
+        in: path
+        description: Profile to modify
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Userprofile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+        required: true
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: Profile not found
+          content: {}
+        422:
+          description: Validation exception
+          content: {}
+      security:
+      - docspout_auth:
+        - write:profile
+        - read:profile
+    delete:
+      tags:
+      - profile
+      summary: Deletes a Userprofile
+      operationId: deleteProfile
+      parameters:
+      - name: api_key
+        in: header
+        schema:
+          type: string
+      - name: profileId
+        in: path
+        description: Profile to delete
+        required: true
+        schema:
+          type: string
+      responses:
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: Pet not found
+          content: {}
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /api/profiles/{profileId}/docker-news:
+    get:
+      tags:
+      - profile
+      summary: Returns docker versions matching to profile
+      description: Returns docker versions matching to profile, persists status to prevent duplicate news
+      operationId: findVersionsByProfile
+      parameters:
+      - name: profileId
+        in: path
+        description: Profile to delete
+        required: true
+        schema:
+          type: string
+      - name: persist
+        in: query
+        description: persist status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockerImageVersion'
+        400:
+          description: Invalid status value
+          content: {}
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /api/profiles/{profileId}/docker-notifications:
+    get:
+      tags:
+      - profile
+      summary: Sends docker notifications on base of the user profile
+      description: Returns docker versions matching to profile, persists status to prevent duplicate news
+      operationId: sendNotificationsByProfile
+      parameters:
+      - name: profileId
+        in: path
+        description: Profile to delete
+        required: true
+        schema:
+          type: string
+      - name: persist
+        in: query
+        description: persist status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockerImageVersion'
+        400:
+          description: Invalid status value
+          content: {}
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+components:
+  schemas:
+    DockerImageVersion:
+      type: object
+      properties:
+        repository:
+          type: string
+        image:
+          type: string
+        semverRange:
+          type: string
+        fetched:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: object
+            properties:
+              tag:
+                type: string
+              isSemver:
+                type: boolean
+              created:
+                type: string
+                format: date-time
+              hashes:
+                type: array
+                items:
+                  type: string
+    DockerImageVersionProfile:
+      type: object
+      description: Docker Version Profile user is interested in
+      properties:
+        repository:
+          type: string
+          description: docker repository/user
+            ([docker.io/]sapien99)
+        image:
+          type: string
+          description: docker image 
+            (prom)
+        tag:
+          type: string
+          description: current used docker tag
+            (v2.7.1)
+        semverRange:
+          type: string
+          description: semver range user is interested in (or not set for no semver check)
+            (>2.7.0)
+        notificationChannels:
+          type: array
+          items:
+            type: string
+          description: reference to defined notification channels
+        ignorePatterns: 
+          type: array
+          items:
+            type: string
+          description: regex ignore patterns for tags
+      required: 
+          - repository
+          - image
+          - tag
+    UserProfile:
+      type: object
+      properties:
+        email:
+          type: string
+        notificationChannels:
+          description: defined notification Channels
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: name of notification channel
+              type:
+                type: string
+                description: type of notification channel
+                enum:
+                - mail
+                - webhook
+              config:
+                type: object
+                description: Configuration of channel
+        defaults:
+          type: object
+          description: default values if not overruled version
+          properties:
+            notificationChannels:
+              type: array
+              description: possible notification channels
+              items: 
+                type: string
+            ignorePatterns:
+              type: array
+              items:
+                type: string
+        subscribedDockerVersions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DockerImageVersionProfile'
+      required: 
+          - email
+          - subscribedDockerVersions
+  securitySchemes:
+    docsprout_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://petstore.swagger.io/oauth/dialog
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header

@@ -60,8 +60,7 @@ export class DockerVersionMatch {
     public readonly image: string;
     public tag: string;
     public hash: string | null;
-    public semverRange: string | null;
-    public ignoreTagsNotSemver: boolean;
+    public semverRange: string | null;    
 
     public static service: IDockerService;
 
@@ -92,8 +91,7 @@ export class DockerVersionMatch {
         this.repository = repository;
         this.image = image;
         this.tag = tag;
-        this.semverRange = semverRange;
-        this.ignoreTagsNotSemver = false;
+        this.semverRange = semverRange;        
     }
 
 }

@@ -81,7 +81,7 @@ export class ProfileService {
      * is stateful and will return only the ones not sent before
      * @param email email of the profiles user
      */
-    async inquireDockerVersionNews(email: string): Promise<IDockerImage[]> {
+    async inquireDockerVersionNews(email: string, persist: boolean): Promise<IDockerImage[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
@@ -89,8 +89,11 @@ export class ProfileService {
         // now create status objects and save them
         await Promise.all(dockerVersions.map((image) => {
             return Promise.all(image.tags.map((tag) => {
-                const status = new NotificationStatus(profile.email, 'ws', image.image, tag.tag);                
-                return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                const status = new NotificationStatus(profile.email, 'ws', image.image, tag.tag);
+                if (persist !== false) {
+                    Logger.log(`Created notification status ${status._id}`);
+                    return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                }
             }));
         }));
         return dockerVersions;
@@ -148,7 +151,7 @@ export class ProfileService {
      * Email notifications
      * @param profile 
      */
-    async _handleMailNotification(profile: IUserProfile) {
+    async _handleMailNotification(profile: IUserProfile, persist: boolean) {
         // care about mail - send a summary if we have any news
         let dockerVersions = await this._inquireDockerVersionsForChannel(profile, 'mail', true);
         dockerVersions = dockerVersions.filter((image) => image.tags.length > 0);
@@ -162,7 +165,10 @@ export class ProfileService {
             await Promise.all(dockerVersions.map((image) => {
                 return Promise.all(image.tags.map((tag) => {
                     const status = new NotificationStatus(profile.email, 'mail', image.image, tag.tag);                
-                    return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                    if (persist !== false) {
+                        Logger.log(`Created notification status ${status._id}`);
+                        return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                    }
                 }));
             }));
         }        
@@ -196,7 +202,7 @@ export class ProfileService {
      * Additionan Notifications (webhook etc.)
      * @param profile 
      */
-    async _handlAdditinalNotifications(profile: IUserProfile) {
+    async _handlAdditinalNotifications(profile: IUserProfile, persist: boolean) {
         // care about webhooks - call them fire and forget
         const versions = await Promise.all(profile.notificationChannels.map(async (channel) => {
             if (channel.type == 'mail') 
@@ -223,7 +229,10 @@ export class ProfileService {
                         .then(async () => {
                             Logger.log(`webhook ${channel.config.url} of channel ${channel.name} called because ${image.image}:${tag.tag}`);
                             const status = new NotificationStatus(profile.email, channel.name, image.image, tag.tag);                
-                            await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                            if (persist !== false) {
+                                Logger.log(`Created notification status ${status._id}`);
+                                await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                            }
                         })
                         .catch(async (e) => {
                             Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${image.image}:${tag.tag}): ${e.message}`);                            
@@ -238,14 +247,14 @@ export class ProfileService {
      * Get Version comparison for docker artifacts of this profile
      * @param email email of the profiles user
      */
-    async doNotifications(email: string) {                        
+    async doNotifications(email: string, persist: boolean) {                        
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
         // mail notifications
-        this._handleMailNotification(profile);        
+        this._handleMailNotification(profile, persist);        
         // webhook notifications
-        this._handlAdditinalNotifications(profile);      
+        this._handlAdditinalNotifications(profile, persist);      
     }
 
     constructor(                
