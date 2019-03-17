@@ -4,10 +4,10 @@ services:
     image: mongo:3.6
     volumes:
        - /data/mongodb:/var/data/db
-  vernotify:
-    image: sapien99/vernotify:0.1.2
+  versionspout:
+    image: sapien99/versionspout:0.9.0
     volumes:
-       - vernotify/mounts:/opt/app/mounts
+       - versionspout/mounts:/opt/app/mounts
     environment:
       - CONFIG=/opt/app/mounts/configmaps/config.yaml
       - PASSWORDS=/opt/app/mounts/secrets/creds.yaml
