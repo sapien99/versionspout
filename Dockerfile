@@ -34,8 +34,10 @@ RUN npm run -s test
 # package the application using the prod-dependencies layer
 FROM node:10-slim
 ENV PORT 3000
+ENV NODE production
 EXPOSE 3000
 WORKDIR /opt/app
+COPY swagger swagger
 COPY --from=prod-dependencies /opt/app/node_modules node_modules
 COPY --from=builder /opt/app/package.json package.json
 COPY --from=builder /opt/app/dist dist
