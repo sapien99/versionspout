@@ -1,7 +1,7 @@
 {
-  "name": "vernotify",
-  "version": "0.0.0",
-  "description": "docker image version notifier",
+  "name": "versionspout",
+  "version": "0.9.0",
+  "description": "Version Notifications for docker",
   "author": "",
   "license": "MIT",
   "scripts": {

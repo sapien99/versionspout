@@ -8,15 +8,15 @@ info:
   version: 1.0.0
 externalDocs:
   description: Find out more about Spout
-  url: http://docker-spout.com
+  url: http://newsspout.com
 servers:
-#- url: https://docspout.com
-- url: http://docspout.com:3000
+#- url: https://versionspout.com
+- url: http://versionspout.com:3000
 tags:
 - name: profile
   description: User Profile
-- name: docker
-  description: Docker Registry
+- name: version
+  description: Version Registry
 - name: system
   description: System internal
 paths:
@@ -30,7 +30,16 @@ paths:
       responses:
         200:
           description: successful operation
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object                
+        555:
+          description: unsuccessful operation
+          content:
+            application/json:
+              schema:
+                type: object                
   /api/profiles:
     post:
       tags:
@@ -63,9 +72,9 @@ paths:
           description: Invalid input
           content: {}
       security:
-      - docspout_auth:
-        - write:profile
-        - read:profile
+      - auth:
+        - write:userprofile
+        - read:userprofile
   /api/profiles/{profileId}:
     get:
       tags:
@@ -92,9 +101,9 @@ paths:
           description: Profile not found
           content: {}
       security:
-      - docspout_auth:
-        - write:profile
-        - read:profile
+      - auth:
+        - write:userprofile
+        - read:userprofile
     put:
       tags:
       - profile
@@ -133,9 +142,9 @@ paths:
           description: Validation exception
           content: {}
       security:
-      - docspout_auth:
-        - write:profile
-        - read:profile
+      - auth:
+        - write:userprofile
+        - read:userprofile
     delete:
       tags:
       - profile
@@ -157,23 +166,23 @@ paths:
           description: Invalid ID supplied
           content: {}
         404:
-          description: Pet not found
+          description: Profile not found
           content: {}
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-  /api/profiles/{profileId}/docker-news:
+      - auth:
+        - write:userprofile
+        - read:userprofile
+  /api/profiles/{profileId}/news:
     get:
       tags:
       - profile
       summary: Returns docker versions matching to profile
-      description: Returns docker versions matching to profile, persists status to prevent duplicate news
+      description: Returns versions matching to profile, persists status to prevent duplicate news
       operationId: findVersionsByProfile
       parameters:
       - name: profileId
         in: path
-        description: Profile to delete
+        description: Profile
         required: true
         schema:
           type: string
@@ -193,25 +202,25 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DockerImageVersion'
+                  $ref: '#/components/schemas/VersionManifest'
         400:
           description: Invalid status value
           content: {}
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
-  /api/profiles/{profileId}/docker-notifications:
+      - auth:
+        - write:userprofile
+        - read:userprofile
+  /api/profiles/{profileId}/notifications:
     get:
       tags:
       - profile
-      summary: Sends docker notifications on base of the user profile
-      description: Returns docker versions matching to profile, persists status to prevent duplicate news
+      summary: Sends notifications on base of the user profile
+      description: Trigger configured notifications
       operationId: sendNotificationsByProfile
       parameters:
       - name: profileId
         in: path
-        description: Profile to delete
+        description: Profile
         required: true
         schema:
           type: string
@@ -231,24 +240,27 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DockerImageVersion'
+                  $ref: '#/components/schemas/VersionManifest'
         400:
           description: Invalid status value
           content: {}
       security:
-      - petstore_auth:
-        - write:pets
-        - read:pets
+      - auth:
+        - write:userprofile
+        - read:userprofile
 components:
   schemas:
-    DockerImageVersion:
+    VersionManifest:
       type: object
       properties:
-        repository:
-          type: string
-        image:
-          type: string
-        semverRange:
+        type:
+          type: string        
+          enum:
+            - docker
+            - github
+        subject:
+          type: string        
+        semver:
           type: string
         fetched:
           type: string
@@ -269,23 +281,20 @@ components:
                 type: array
                 items:
                   type: string
-    DockerImageVersionProfile:
-      type: object
+    VersionProfile:
+      type: object      
       description: Docker Version Profile user is interested in
       properties:
-        repository:
+        type:
+          type: string
+          enum:
+            - docker
+            - github
+        subject:
           type: string
           description: docker repository/user
-            ([docker.io/]sapien99)
-        image:
-          type: string
-          description: docker image 
-            (prom)
-        tag:
-          type: string
-          description: current used docker tag
-            (v2.7.1)
-        semverRange:
+            ([docker.io/]sapien99)                
+        semver:
           type: string
           description: semver range user is interested in (or not set for no semver check)
             (>2.7.0)
@@ -298,11 +307,9 @@ components:
           type: array
           items:
             type: string
-          description: regex ignore patterns for tags
+          description: regex ignore patterns for tags (to skip latest, *.rc etc.)
       required: 
-          - repository
-          - image
-          - tag
+          - subject                    
     UserProfile:
       type: object
       properties:
@@ -347,14 +354,14 @@ components:
           - email
           - subscribedDockerVersions
   securitySchemes:
-    docsprout_auth:
+    auth:
       type: oauth2
       flows:
         implicit:
-          authorizationUrl: http://petstore.swagger.io/oauth/dialog
+          authorizationUrl: http://security.versionspout/oauth/dialog
           scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
+            write:userprofile: write UserAccounts
+            read:userprofile: read UserAccounts            
     api_key:
       type: apiKey
       name: api_key

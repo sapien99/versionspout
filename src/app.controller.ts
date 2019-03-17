@@ -10,13 +10,6 @@ export class AppController {
     @Get('/healthz')
     health(): string {
       return this.appService.healthz();
-    }
-    
-    // do some swagger - we do not use the handy @nestjs/swagger package, 
-    // because we want to have full control  
-    @Get('/swagger')
-    swagger(): string {
-      return this.appService.healthz();
-    }
+    }        
 
 }

@@ -47,9 +47,9 @@ function readMongoConfig(configpath, secretpath) {
 /**
  * Environment and global variables
  */
-export const globals = {
+export const globals = {    
   node: process.env.NODE_ENV || 'development',
-  isProduction: process.env.NODE_ENV === 'production',
+  isProduction: process.env.NODE_ENV === 'production',  
   isTest: process.env.NODE_ENV === 'test',
   isDevelopment: process.env.NODE_ENV === 'development',
   expressInstance: null,
@@ -75,7 +75,7 @@ export const globals = {
     assets: getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'assets'),
   },
   log: {
-    level: getOsEnv('LOG_LEVEL'),
+    level: toNumber(getOsEnv('LOG_LEVEL')) || 2,
     json: toBool(getOsEnv('LOG_JSON')),
     output: getOsEnv('LOG_OUTPUT'),
   },

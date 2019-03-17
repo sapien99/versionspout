@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from './mail/mail.module';
+import { VersionModule } from './version/version.module';
 import { DockerModule } from './docker/docker.module';
 
 @Module({
@@ -13,10 +14,11 @@ import { DockerModule } from './docker/docker.module';
       MongooseModule.forRoot(
           globals.mongo.url,
           { useNewUrlParser: true },
-      ),      
-      AuthModule,
-      MailModule,      
+      ), 
       DockerModule,      
+      VersionModule,            
+      AuthModule,
+      MailModule,            
       ProfileModule, 
   ],
   controllers: [AppController],

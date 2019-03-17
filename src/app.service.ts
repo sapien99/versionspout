@@ -6,7 +6,7 @@ export class AppService {
     constructor() {}
 
     healthz(): string {
-        return 'UP';
+        return JSON.stringify({ status: 'UP' });
     }
 
 }

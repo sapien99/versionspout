@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import * as path from 'path';
 
+import { globals } from 'env';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

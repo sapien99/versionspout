@@ -1,13 +1,14 @@
 import { globals } from './../env';
-import { HttpException, HttpStatus, Injectable, Logger, HttpService} from '@nestjs/common';
-import { IUserProfile, INotificationStatus, NotificationStatus, DockerVersionProfile } from './models/profile.model';
+import { HttpException, HttpStatus, Injectable, HttpService} from '@nestjs/common';
+import { IUserProfile, INotificationStatus, NotificationStatus, UserVersionProfile } from './models/profile.model';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as _ from 'lodash';
-import { DockerVersionMatch, IDockerTag, IDockerImage, DockerImage } from '../docker/models/docker.model';
-import { DockerService } from '../docker/docker.service';
+import { VersionManifest, IVersionTag, IVersionManifest } from '../version/models/version.model';
+import { VersionService } from '../version/version.service';
 import { MailService } from '../mail/mail.service';
 import { MailOptions } from '../mail/models/mail.model';
+import { Logger } from '../logger';
 
 @Injectable()
 export class ProfileService {
@@ -19,12 +20,12 @@ export class ProfileService {
     async createProfile(profile: IUserProfile) {                
         // save profilemodel in db       
         let resp = await this.profileModel.findByIdAndUpdate( profile.email, profile, { upsert: true, new: true, setDefaultsOnInsert: true } );                
-        Logger.log(`Profile ${profile.email} touched`);
+        Logger.info(`Profile ${profile.email} touched`);
         
         if (globals.mail.enabled) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
-            mailOptions.subject = 'Welcome on summit15';
+            mailOptions.subject = 'Welcome to Versionspout';
             mailOptions.template = 'signup'                    
             this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
             resp.notificationMailSent = true;
@@ -38,7 +39,7 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async findProfile(email: string): Promise<IUserProfile | null> {        
-        // TODO: check permission
+        // TODO: use guard to check permission
         return this.profileModel.findById( email );
     }
 
@@ -46,9 +47,8 @@ export class ProfileService {
      * Update existing ProfileModel
      * @param email email of the profiles user
      */
-    async updateProfile(email: string, profile: IUserProfile): Promise<IUserProfile | null> {                
-        // TODO: send email about update
-        // TODO: check permission
+    async updateProfile(email: string, profile: IUserProfile): Promise<IUserProfile | null> {                        
+        // TODO: use guard to check permission
         return this.profileModel.findByIdAndUpdate( email, profile );
     }
 
@@ -57,10 +57,19 @@ export class ProfileService {
      * @param email email of the profiles user
      */
     async deleteProfile(email: string) {        
-        // TODO: send email about delete       
+        // TODO: use guard to check permission        
         const profile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND); 
+
+        if (globals.mail.enabled) {
+            const mailOptions = new MailOptions();
+            mailOptions.to = profile.email;
+            mailOptions.subject = 'You deleted your account on Versionspout';
+            mailOptions.template = 'delete'                    
+            this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));            
+        }
+
         return this.profileModel.findByIdAndRemove( email );
     }
 
@@ -69,11 +78,11 @@ export class ProfileService {
      * is stateless and will return the matching versions
      * @param email email of the profiles user
      */
-    async inquireDockerVersions(email: string): Promise<IDockerImage[]> {
+    async inquireVersions(email: string): Promise<IVersionManifest[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-        return this._inquireDockerVersionsForChannel(profile, 'ws', false);
+        return this._inquireVersionsForChannel(profile, 'ws', false);
     }                        
 
     /**
@@ -81,39 +90,39 @@ export class ProfileService {
      * is stateful and will return only the ones not sent before
      * @param email email of the profiles user
      */
-    async inquireDockerVersionNews(email: string, persist: boolean): Promise<IDockerImage[]> {
+    async inquireVersionNews(email: string, persist: boolean): Promise<IVersionManifest[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
             throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-        const dockerVersions = await this._inquireDockerVersionsForChannel(profile, 'ws', true);
+            
+        const versions = await this._inquireVersionsForChannel(profile, 'ws', true);
         // now create status objects and save them
-        await Promise.all(dockerVersions.map((image) => {
-            return Promise.all(image.tags.map((tag) => {
-                const status = new NotificationStatus(profile.email, 'ws', image.image, tag.tag);
+        await Promise.all(versions.map((manifest) => {
+            return Promise.all(manifest.tags.map((tag) => {
+                const status = new NotificationStatus(profile.email, 'ws', manifest.subject, tag.tag);
                 if (persist !== false) {
-                    Logger.log(`Created notification status ${status._id}`);
+                    Logger.info(`Created notification status ${status._id}`);
                     return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
                 }
             }));
         }));
-        return dockerVersions;
+        return versions;
     }                        
+    
+    /* get the versions for a certain channel */
+    async _inquireVersionsForChannel(profile: IUserProfile, channel: string, delta: boolean): Promise<IVersionManifest[]> {                                
 
-    /**
-     * Private Version comparison for docker artifacts of this profile - used for being directly callable for testing
-     * @param email email of the profiles user
-     */
-    async _inquireDockerVersions(subscribedDockerVersions: DockerVersionMatch[]): Promise<IDockerImage[]> {        
-        return this.dockerVersionService.fetchAndCompareMany(subscribedDockerVersions);                
-    }
+        const subscribedVersions = profile.subscribedVersions.map((versionProfile) => {            
+            if (!versionProfile.ignorePatterns || versionProfile.ignorePatterns.length == 0)
+                versionProfile.ignorePatterns = profile.defaults.ignorePatterns || [];                                                    
+            return versionProfile;
+        });        
 
-    /* get the docker versions for a certain channel */
-    async _inquireDockerVersionsForChannel(profile: IUserProfile, channel: string, delta: boolean): Promise<IDockerImage[]> {                                
-        const versions: IDockerImage[] = await this._inquireDockerVersions(profile.subscribedDockerVersions);
-        return _.without(await Promise.all(versions.map(async (dockerImage: DockerImage) => {
+        const versions: IVersionManifest[] = await this.versionService.fetchAndFilterMany(subscribedVersions);
+        return _.without(await Promise.all(versions.map(async (dockerImage: VersionManifest) => {
 
             // get request to read channels
-            const requirement: DockerVersionProfile = this._getSubscribedDockerVersion(profile, dockerImage)
+            const requirement: UserVersionProfile = this._getSubscribedVersion(profile, dockerImage)
             let validNotificationChannels = requirement.notificationChannels;
             if (!validNotificationChannels || validNotificationChannels.length == 0) validNotificationChannels = profile.defaults.notificationChannels || [];
             // add the webservice channel in all cases - is used for the inquire via rest
@@ -121,29 +130,24 @@ export class ProfileService {
             // if not matching the channel skip the whole image
             if (validNotificationChannels.indexOf(channel) == -1) {
                 return null;
-            } 
-            let ignorePatterns = requirement.ignorePatterns;
-            if (!ignorePatterns || ignorePatterns.length == 0)
-                ignorePatterns = profile.defaults.ignorePatterns || [];                                    
+            }             
             // if in "delta mode" we just return the tags since the last call            
             dockerImage.tags = _.without(await Promise.all(dockerImage.tags.map((tag) => this._checkNotificationStatus(
                 profile, // profile
                 channel, 
-                dockerImage.image, 
-                tag, // the whole tag object
-                ignorePatterns, // regex which non-semver versions are allowed                                
+                dockerImage.subject, 
+                tag, // the whole tag object                
                 delta,                
-                requirement.semverRange.length > 0
+                requirement.semver.length > 0
                 ))), null);            
 
             return dockerImage;
         })), null);
     }
 
-    _getSubscribedDockerVersion(profile: IUserProfile, image: IDockerImage): DockerVersionProfile {
-        return profile.subscribedDockerVersions.find((img) => {
-            return img.image === image.image 
-              && img.repository === image.repository              
+    _getSubscribedVersion(profile: IUserProfile, image: IVersionManifest): UserVersionProfile {
+        return profile.subscribedVersions.find((img) => {
+            return img.subject === image.subject           
         });
     }
 
@@ -153,7 +157,7 @@ export class ProfileService {
      */
     async _handleMailNotification(profile: IUserProfile, persist: boolean) {
         // care about mail - send a summary if we have any news
-        let dockerVersions = await this._inquireDockerVersionsForChannel(profile, 'mail', true);
+        let dockerVersions = await this._inquireVersionsForChannel(profile, 'mail', true);
         dockerVersions = dockerVersions.filter((image) => image.tags.length > 0);
         if (dockerVersions.length > 0) {
             const mailOptions = new MailOptions();
@@ -164,9 +168,9 @@ export class ProfileService {
             // now create status objects and save them
             await Promise.all(dockerVersions.map((image) => {
                 return Promise.all(image.tags.map((tag) => {
-                    const status = new NotificationStatus(profile.email, 'mail', image.image, tag.tag);                
+                    const status = new NotificationStatus(profile.email, 'mail', image.subject, tag.tag);                
                     if (persist !== false) {
-                        Logger.log(`Created notification status ${status._id}`);
+                        Logger.debug(`Created notification status ${status._id}`);
                         return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
                     }
                 }));
@@ -181,11 +185,9 @@ export class ProfileService {
      * @param image 
      * @param tag 
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IDockerTag, ignorePatterns: string[], forceState:boolean, forceSemver:boolean) {                                        
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IVersionTag, forceState:boolean, forceSemver:boolean) {                                        
         // ignore everything matching a regex in the ignorepatterns        
         if (forceSemver && !tag.isSemver)
-            return null;
-        if (_.some(ignorePatterns, (pattern) => tag.tag.match(new RegExp(pattern))))
             return null;        
         if (forceState) {
             const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
@@ -207,35 +209,34 @@ export class ProfileService {
         const versions = await Promise.all(profile.notificationChannels.map(async (channel) => {
             if (channel.type == 'mail') 
                 return [];
-            return await this._inquireDockerVersionsForChannel(profile, channel.name, true);
+            return await this._inquireVersionsForChannel(profile, channel.name, true);
         }));
         profile.notificationChannels.map(async (channel, index) => {                        
             if (channel.type == 'webhook') {                
-                return Promise.all(versions[index].map((image) => {
-                    return Promise.all(image.tags.map((tag) => {
+                return Promise.all(versions[index].map((manifest) => {
+                    return Promise.all(manifest.tags.map((tag) => {
                         channel.config.method = 'POST'
                         channel.config.data = {
-                            image: {
-                                repository: image.repository,
-                                name: image.image
+                            manifest: {
+                                subject: manifest.subject
                             },
                             tag: {
                                 name: tag.tag,
-                                hash: tag.hashes,
+                                data: tag.data,
                                 created: tag.created
                             }
                         };
                         return this.httpService.axiosRef(channel.config)
                         .then(async () => {
-                            Logger.log(`webhook ${channel.config.url} of channel ${channel.name} called because ${image.image}:${tag.tag}`);
-                            const status = new NotificationStatus(profile.email, channel.name, image.image, tag.tag);                
+                            Logger.info(`webhook ${channel.config.url} of channel ${channel.name} called because ${manifest.subject}:${tag.tag}`);
+                            const status = new NotificationStatus(profile.email, channel.name, manifest.subject, tag.tag);                
                             if (persist !== false) {
-                                Logger.log(`Created notification status ${status._id}`);
+                                Logger.debug(`Created notification status ${status._id}`);
                                 await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
                             }
                         })
                         .catch(async (e) => {
-                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${image.image}:${tag.tag}): ${e.message}`);                            
+                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${manifest.subject}:${tag.tag}): ${e.message}`);                            
                         })
                     }));
                 }));                
@@ -260,7 +261,7 @@ export class ProfileService {
     constructor(                
         @InjectModel('UserProfile') private readonly profileModel: Model<IUserProfile>,        
         @InjectModel('NotificationStatus') private readonly notifcationstatusModel: Model<INotificationStatus>,        
-        private readonly dockerVersionService: DockerService,
+        private readonly versionService: VersionService,
         private readonly httpService: HttpService,
         private readonly mailService: MailService) {}
 

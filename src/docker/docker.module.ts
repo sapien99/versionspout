@@ -1,7 +1,5 @@
+import { DockerManifestSchema } from './models/docker.schema';
 import { Module } from '@nestjs/common';
-import { HttpModule} from '@nestjs/common';
-import { DockerVersionController } from './docker.controller';
-import { DockerVersionSchema} from './models/docker.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DockerService } from './docker.service';
 
@@ -9,15 +7,15 @@ import { DockerService } from './docker.service';
     imports: [        
         MongooseModule.forFeature([
             {
-                name: 'DockerVersion',
-                schema: DockerVersionSchema,
+                name: 'DockerManifest',
+                schema: DockerManifestSchema,
             },
         ]),
     ],
     exports: [
-        DockerService
+        DockerService,
     ],
-    controllers: [DockerVersionController],
+    controllers: [],
     providers: [DockerService],
 })
 export class DockerModule {}

@@ -16,7 +16,7 @@ describe('AppController', () => {
   describe('healthz', () => {
     it('should return 200 and UP', () => {
       const appController = app.get<AppController>(AppController);
-      expect(appController.health()).toBe('UP');
+      expect(appController.health()).toBe(JSON.stringify({status:'UP'}));
     });
   });
 });

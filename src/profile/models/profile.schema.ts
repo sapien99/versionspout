@@ -34,13 +34,12 @@ export const UserProfileSchema = new mongoose.Schema({
         ignorePatterns: [{ type: String }],        
     },
 
-    subscribedDockerVersions: [{
+    subscribedVersions: [{
+        type: { type: String },                
         notificationChannels: [{ type: String }],        
-        ignorePatterns: [{ type: String }],        
-        semverRange: { type: String },        
-        repository: { type: String },
-        image: { type: String },            
-        tag: { type: String },            
+        ignorePatterns: [{ type: String }],                
+        semver: { type: String },                
+        subject: { type: String },        
     }]
 }, {
     versionKey: false

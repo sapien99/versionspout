@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-export const DockerTagSchema = new mongoose.Schema({
+export const VersionTagSchema = new mongoose.Schema({
     type: { type: String },
     tag: { type: String },
     isSemver: { type: Boolean },
@@ -8,11 +8,11 @@ export const DockerTagSchema = new mongoose.Schema({
     data: { type: mongoose.Schema.Types.Mixed },    
 }, { _id: false, versionKey: false })
 
-export const DockerManifestSchema = new mongoose.Schema({
+export const VersionManifestSchema = new mongoose.Schema({
     _id: { type: String },
     type: { type: String },
     repository: { type: String },
     subject: { type: String },    
     fetched: { type: Date, default: Date.now },
-    tags: [DockerTagSchema]    
+    tags: [VersionTagSchema]    
 }, { versionKey: false });

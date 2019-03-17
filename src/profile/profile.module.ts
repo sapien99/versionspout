@@ -4,13 +4,13 @@ import { UserProfileSchema, NotificationStatusSchema } from './models/profile.sc
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProfileService } from './profile.service';
 import { MailModule } from '../mail/mail.module';
-import { DockerModule } from '../docker/docker.module';
+import { VersionModule } from '../version/version.module';
 
 @Module({
     imports: [       
         HttpModule,               
         MailModule,
-        DockerModule,
+        VersionModule,
         MongooseModule.forFeature([
             {
                 name: 'UserProfile',

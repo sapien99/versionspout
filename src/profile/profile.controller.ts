@@ -1,8 +1,6 @@
 import {Get, Post, Param, Put, Delete, Query, Controller, Body, HttpCode} from '@nestjs/common';
 import { ProfileService } from './profile.service';
-import { Logger } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
-
 import { UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { IUserProfile, UserProfile } from './models/profile.model';
@@ -52,18 +50,18 @@ export class ProfileController {
      * Get news (channel ws), persists the status
      * @param body 
      */
-    @Get(':id/docker-news')
+    @Get(':id/news')
     async inquireNews(@Param('id') id, @Query('persist') persist) {        
-        return await this.profileService.inquireDockerVersionNews(id, persist);
+        return await this.profileService.inquireVersionNews(id, persist === 'true');
     }
 
     /**
      * Trigger notifications
      * @param body 
      */
-    @Get(':id/docker-notifications')
+    @Get(':id/notifications')
     async doNotifications(@Param('id') id, @Query('persist') persist) {        
-        return await this.profileService.doNotifications(id, persist);
+        return await this.profileService.doNotifications(id, persist === 'true');
     }
 
     constructor(private readonly profileService: ProfileService ) {        

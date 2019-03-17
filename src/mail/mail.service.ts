@@ -4,10 +4,10 @@ import * as nodemailer from 'nodemailer';
 import * as _ from 'lodash';
 import * as ejs from 'ejs';
 import { promisify } from 'util';
-import { Logger} from '@nestjs/common';
 import { globals } from '../env';
 import * as path from 'path';
 import { MailOptions, Mail } from './models/mail.model';
+import { Logger } from '../logger';
 
 @Injectable()
 export class MailService {
@@ -19,7 +19,7 @@ export class MailService {
     public async compose(config: MailOptions, data: any, sendHtmlMail: boolean): Promise<Mail> {
       const composedMail = new Mail();
 
-      Logger.log('composing email to ', config.to);
+      Logger.info('composing email to ', config.to);
       const textPath = path.join(globals.path.assets, 'mailtemplates', config.template, 'text.ejs');
       const htmlPath = path.join(globals.path.assets, 'mailtemplates', config.template, 'html.ejs');
       const emailData = _.merge({}, data, config.context || {});
@@ -50,7 +50,7 @@ export class MailService {
 
     public async verify() {
       if (globals.mail.host) {
-        Logger.log('Verifying SMTP Connection');
+        Logger.info('Verifying SMTP Connection');
         await MailService.transporter.verify();
         MailService.transporter.close();
       } else {
@@ -76,7 +76,7 @@ export class MailService {
       };
 
       MailService.transporter = nodemailer.createTransport(smtpOptions as any);
-      Logger.log(`creating mail transporter with options ${smtpOptions}`);
+      Logger.info(`creating mail transporter with options ${smtpOptions}`);
       MailService._renderFile = promisify(ejs.renderFile);
     }
 

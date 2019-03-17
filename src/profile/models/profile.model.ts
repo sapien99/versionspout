@@ -1,4 +1,4 @@
-import { DockerVersionMatch } from '../../docker/models/docker.model';
+import { VersionProfile } from '../../version/models/version.model';
 import { IsNotEmpty, IsEmail } from 'class-validator';
 
 export interface INotificationChannel {    
@@ -24,12 +24,11 @@ export interface IUserProfile {
         notificationChannels: string[],        
         ignorePatterns: string[]        
     }
-    readonly subscribedDockerVersions: DockerVersionProfile[];        
+    readonly subscribedVersions: UserVersionProfile[];        
 }
 
-export class DockerVersionProfile extends DockerVersionMatch {    
-    public notificationChannels: string[]    
-    public ignorePatterns: string[]    
+export class UserVersionProfile extends VersionProfile {    
+    public notificationChannels: string[]        
 }
 
 export class UserProfileDefaults {    
@@ -48,11 +47,11 @@ export class UserProfile implements IUserProfile {
     public defaults: UserProfileDefaults;        
     // docker version profile - semver    
     @IsNotEmpty()
-    public readonly subscribedDockerVersions: DockerVersionProfile[];        
+    public readonly subscribedVersions: UserVersionProfile[];        
     
-    constructor(email: string, dockerVersions: DockerVersionProfile[]) {
+    constructor(email: string, dockerVersions: UserVersionProfile[]) {
         this.email = email;
-        this.subscribedDockerVersions = dockerVersions;    
+        this.subscribedVersions = dockerVersions;    
     }
 }
 
