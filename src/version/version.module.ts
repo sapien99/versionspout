@@ -4,15 +4,11 @@ import { VersionManifestSchema } from './models/version.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { VersionService } from './version.service';
 import { DockerModule } from '../docker/docker.module';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
     imports: [        
-        /*MongooseModule.forFeature([
-            {
-                name: 'VersionManifest',
-                schema: VersionManifestSchema,
-            },
-        ]),*/
+        DatabaseModule,
         DockerModule,
     ],
     exports: [

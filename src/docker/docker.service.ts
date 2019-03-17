@@ -1,14 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
 import * as drc from 'docker-registry-client';
 import { DockerManifest, DockerTag, DockerVersionProfile } from './models/docker.model';
-import { IVersionService } from '../version/version.service';
+import { IVersionProvider } from '../version/version.service';
 import * as _ from 'lodash';
 import { Logger } from '../logger';
 
 @Injectable()
-export class DockerService implements IVersionService {
+export class DockerService implements IVersionProvider {
 
     /**
      * Fetch metainfo for tag (latest hash-id, created-timestamp etc.)
@@ -80,7 +79,7 @@ export class DockerService implements IVersionService {
     }
 
     constructor(
-        @InjectModel('DockerManifest') private readonly dockerVersionModel: Model<DockerManifest>,        
+        @Inject('DockerManifestToken') private readonly dockerVersionModel: Model<DockerManifest>        
     ) {}
 
 }

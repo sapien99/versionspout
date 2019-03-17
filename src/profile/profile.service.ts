@@ -1,8 +1,7 @@
 import { globals } from './../env';
-import { HttpException, HttpStatus, Injectable, HttpService} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, HttpService, Inject } from '@nestjs/common';
 import { IUserProfile, INotificationStatus, NotificationStatus, UserVersionProfile } from './models/profile.model';
 import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
 import * as _ from 'lodash';
 import { VersionManifest, IVersionTag, IVersionManifest } from '../version/models/version.model';
 import { VersionService } from '../version/version.service';
@@ -258,9 +257,9 @@ export class ProfileService {
         this._handlAdditinalNotifications(profile, persist);      
     }
 
-    constructor(                
-        @InjectModel('UserProfile') private readonly profileModel: Model<IUserProfile>,        
-        @InjectModel('NotificationStatus') private readonly notifcationstatusModel: Model<INotificationStatus>,        
+    constructor(        
+        @Inject('UserProfileToken') private readonly profileModel: Model<IUserProfile>,
+        @Inject('NotificationStatusToken') private readonly notifcationstatusModel: Model<INotificationStatus>,
         private readonly versionService: VersionService,
         private readonly httpService: HttpService,
         private readonly mailService: MailService) {}

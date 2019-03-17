@@ -1,21 +1,16 @@
-import { DockerManifestSchema } from './models/docker.schema';
+import { DatabaseModule } from './../database/database.module';
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { DockerService } from './docker.service';
+import { dockerProviders } from './docker.providers';
 
 @Module({
-    imports: [        
-        MongooseModule.forFeature([
-            {
-                name: 'DockerManifest',
-                schema: DockerManifestSchema,
-            },
-        ]),
+    imports: [
+        DatabaseModule
     ],
     exports: [
         DockerService,
     ],
     controllers: [],
-    providers: [DockerService],
+    providers: [DockerService, ...dockerProviders],
 })
 export class DockerModule {}

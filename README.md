@@ -1,6 +1,6 @@
-# Dockerss
+# Versionspout
 
-News about your docker images.
+News about docker images and github releases.
 
 ## Start
 
@@ -31,7 +31,7 @@ Userprofile contains the docker images you are interested in, as well as the cha
             "webhook1"
         ]
     }, 
-    "email" : "michael.ferjancic@gmail.com", 
+    "email" : "someone@gmail.com", 
     "htmlEmail" : false, 
     "notificationChannels" : [
         {
@@ -56,10 +56,8 @@ Userprofile contains the docker images you are interested in, as well as the cha
                 "master", 
                 ".*rc.*"
             ], 
-            "semverRange" : ">2.7", 
-            "repository" : "prom", 
-            "image" : "prometheus", 
-            "tag" : "2.2.0"
+            "semver" : ">2.7", 
+            "subject" : "prom/prometheus" 
         }
     ]
 }
@@ -69,5 +67,5 @@ Userprofile contains the docker images you are interested in, as well as the cha
 
 ### Build
 ```
-docker build -t vernotify .
+docker build -t versionspout .
 ```

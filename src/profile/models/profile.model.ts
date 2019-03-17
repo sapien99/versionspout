@@ -49,9 +49,9 @@ export class UserProfile implements IUserProfile {
     @IsNotEmpty()
     public readonly subscribedVersions: UserVersionProfile[];        
     
-    constructor(email: string, dockerVersions: UserVersionProfile[]) {
+    constructor(email: string, subscribedVersions: UserVersionProfile[]) {
         this.email = email;
-        this.subscribedVersions = dockerVersions;    
+        this.subscribedVersions = subscribedVersions;    
     }
 }
 

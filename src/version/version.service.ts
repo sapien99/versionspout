@@ -5,7 +5,7 @@ import { DockerService } from '../docker/docker.service';
 import * as _ from 'lodash';
 import { Logger } from '../logger';
 
-export interface IVersionProvider {
+export interface IVersionService {
     /**
      * Fetch Tags on base of the given profile
      * @param profile
@@ -19,7 +19,7 @@ export interface IVersionProvider {
 
 }
 
-export interface IVersionService {
+export interface IVersionProvider {
     fetchVersions( profile: VersionProfile): Promise<IVersionManifest>;
 }
 
