@@ -4,12 +4,12 @@ import { UserProfileSchema, NotificationStatusSchema } from './models/profile.sc
 export const profileProviders = [
   {
     provide: 'UserProfileToken',
-    useFactory: (connection: Connection) => connection.model('UserProfile', UserProfileSchema),
+    useFactory: (connection: Connection) => connection ? connection.model('UserProfile', UserProfileSchema) : null,
     inject: ['DbConnectionToken'],
   },
   {
     provide: 'NotificationStatusToken',
-    useFactory: (connection: Connection) => connection.model('NotificationStatus', NotificationStatusSchema),
+    useFactory: (connection: Connection) => connection ? connection.model('NotificationStatus', NotificationStatusSchema) : null,
     inject: ['DbConnectionToken'],
   },
 ];

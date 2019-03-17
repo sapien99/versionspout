@@ -14,7 +14,7 @@ describe('DockerService', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [DatabaseModule],      
       providers:[DockerService, ...dockerProviders],    
-    })    
+    })        
     .overrideProvider('DockerManifest')  
     .useValue({
       provide: 'DockerManifestMock',

@@ -4,7 +4,7 @@ import { globals } from '../env';
 export const databaseProviders = [
   {
     provide: 'DbConnectionToken',
-    useFactory: async (): Promise<typeof mongoose> =>
-      await mongoose.connect(globals.mongo.url),
+    useFactory: async (): Promise<typeof mongoose> =>      
+      globals.isTest ? null : await mongoose.connect(globals.mongo.url),
   },
 ];
