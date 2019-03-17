@@ -1,8 +1,6 @@
 { 
     "defaults" : {
-        "notificationChannels" : [
-            "webhook1"
-        ]
+        "notificationChannels" : []
     }, 
     "email" : "michael.ferjancic@gmail.com", 
     "htmlEmail" : false, 
@@ -21,7 +19,7 @@
     "subscribedDockerVersions" : [
         {
             "notificationChannels" : [
-
+              "webhook1"
             ], 
             "ignorePatterns" : [
                 "development", 
@@ -29,10 +27,8 @@
                 "master", 
                 ".*rc.*"
             ], 
-            "semverRange" : ">2.7.0", 
-            "repository" : "prom", 
-            "image" : "prometheus", 
-            "tag" : "2.2.0"
+            "semver" : ">2.7.0", 
+            "subject" : "prom/prometheus" 
         }
     ]
 }
