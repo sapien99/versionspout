@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as semver from 'semver';
 import { VersionProfile, IVersionManifest, VersionManifest, IVersionTag, VersionTag } from './models/version.model';
 import { DockerService } from '../docker/docker.service'; 
+import { GithubService } from '../github/github.service'; 
 import * as _ from 'lodash';
 import { Logger } from '../logger';
 
@@ -96,7 +97,7 @@ export class VersionService implements IVersionService {
 
     constructor(                
         private readonly dockerVersionService: DockerService,
-        // private readonly githubReleaseService: GithubService,
+        private readonly githubReleaseService: GithubService,
     ) {}
 
 }

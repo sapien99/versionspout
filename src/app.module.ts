@@ -7,12 +7,14 @@ import { ProfileModule } from './profile/profile.module';
 import { MailModule } from './mail/mail.module';
 import { VersionModule } from './version/version.module';
 import { DockerModule } from './docker/docker.module';
+import { GithubModule } from './github/github.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
       DatabaseModule,
       DockerModule,
+      GithubModule,
       VersionModule,                  
       MailModule,            
       AuthModule,
