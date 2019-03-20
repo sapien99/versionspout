@@ -13,12 +13,11 @@ export class GithubService implements IVersionProvider {
             const resp:any = await this.httpService.axiosRef({
                 method: 'get',
                 url: `https://api.github.com/repos/${profile.subject}/releases`,
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
+                headers: {                    
                     'accept': 'application/json'
                 }                    
-              });        
-              return resp.data && resp.data.access_token || null;        
+              });                      
+            return resp.data;                            
         } catch (e) {
             Logger.error('Creating ovirt-engine authentication token failed', e);
             return null;
@@ -42,7 +41,7 @@ export class GithubService implements IVersionProvider {
                 return resolve(cachedEntry);                                
             }
             // else fetch from docker-repo
-            Logger.debug(`Fetching repo: ${profile.subject} from dockerhub`);
+            Logger.debug(`Fetching repo: ${profile.subject} from github`);
             
             const releases = await this.listReleases(profile);
             if (!releases) {
@@ -50,8 +49,8 @@ export class GithubService implements IVersionProvider {
             }                                                                                          
 
             let cacheEntry: GithubRepository = new GithubRepository(profile.subject, []);                
-            releases.tags.reverse().forEach((tag) => {                    
-                cacheEntry.tags.push(new GithubRelease(tag, []));
+            releases.forEach((release) => {                    
+                cacheEntry.tags.push(new GithubRelease(release.tag_name, release));
             });
             
             // save data in cache

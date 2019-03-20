@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: Spout
-  description: 'Notifications for Docker Versions'
+  description: 'Notifications for Releases and Tags'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -274,7 +274,7 @@ components:
                 type: string
               isSemver:
                 type: boolean
-              created:
+              published:
                 type: string
                 format: date-time
               hashes:

@@ -72,7 +72,7 @@ export const globals = {
   ),
   path: {
     root: path.join(__dirname, '..'),    
-    assets: getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'assets'),
+    assets: getOsEnv('ASSETS') || path.join(__dirname, '..', 'mounts', 'assets'),
   },
   log: {
     level: toNumber(getOsEnv('LOG_LEVEL')) || 2,

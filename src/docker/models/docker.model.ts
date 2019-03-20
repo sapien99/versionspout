@@ -3,14 +3,13 @@ import { IVersionManifest, VersionManifest, IVersionTag, VersionTag, IVersionPro
 export class DockerTag extends VersionTag implements IVersionTag {
 
     constructor(tag: string, manifest: any) {
-        super('docker', tag, manifest);        
+        super('docker', tag);                
         this.data = [];
 
         if (manifest) {            
-            this.created = manifest.created ? new Date(manifest.created) : null;    
+            this.published = manifest.created ? new Date(manifest.created) : null;    
             this.data = {
-                actual: {
-                    created: manifest.created ? new Date(manifest.created) : null,   
+                actual: {                    
                     hash: manifest.hashes[0]
                 }
             };

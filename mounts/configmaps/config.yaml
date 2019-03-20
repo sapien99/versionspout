@@ -8,4 +8,4 @@ smtp:
     - header4.png
   secret: '/run/secrets/smtp'
 mongo:
-  url: mongodb://mongo:27017/versify
+  url: mongodb://mongo:27017/versionspout

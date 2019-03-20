@@ -4,7 +4,7 @@ export const DockerTagSchema = new mongoose.Schema({
     type: { type: String },
     tag: { type: String },
     isSemver: { type: Boolean },
-    created: { type: Date },        
+    published: { type: Date },        
     data: { type: mongoose.Schema.Types.Mixed },    
 }, { _id: false, versionKey: false })
 

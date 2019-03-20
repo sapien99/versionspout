@@ -40,14 +40,14 @@
                 <tr>
                   <td class="content-block">                  
                     <table>
-                      <% for(let i=0; i < dockerVersions.length; i++) { %>
+                      <% for(let i=0; i < versions.length; i++) { %>
                          <tr>
-                           <td><h3><%= dockerVersions[i].subject %> (<%= dockerVersions[i].semver %>)</h3></td>                           
+                           <td><h3><%= versions[i].subject %> (<%= versions[i].semver %>)</h3></td>                           
                          </tr>
-                         <% for(let j=0; j < dockerVersions[i].tags.length; j++) { %>
+                         <% for(let j=0; j < versions[i].tags.length; j++) { %>
                          <tr>                            
-                           <td><%= JSON.stringify(dockerVersions[i].tags[j].tag) %></td>                                                      
-                           <td><%= dockerVersions[i].tags[j].created %></td>                           
+                           <td><%= JSON.stringify(versions[i].tags[j].tag) %></td>                                                      
+                           <td><%= versions[i].tags[j].published %></td>                           
                          </tr>
                          <% } %>
                       <% } %>
@@ -62,7 +62,7 @@
         <div class="footer">
           <table width="100%">
             <tr>
-              <td class="aligncenter content-block">Follow <a href="#">summit15</a> on Twitter.</td>
+              <td class="aligncenter content-block"></td>
             </tr>
           </table>
         </div></div>

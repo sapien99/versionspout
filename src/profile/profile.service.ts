@@ -24,7 +24,7 @@ export class ProfileService {
         if (globals.mail.enabled) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
-            mailOptions.subject = 'Welcome to Versionspout';
+            mailOptions.subject = 'Welcome to versionspout';
             mailOptions.template = 'signup'                    
             this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
             resp.notificationMailSent = true;
@@ -64,7 +64,7 @@ export class ProfileService {
         if (globals.mail.enabled) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
-            mailOptions.subject = 'You deleted your account on Versionspout';
+            mailOptions.subject = 'You deleted your account on versionspout';
             mailOptions.template = 'delete'                    
             this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));            
         }
@@ -156,16 +156,16 @@ export class ProfileService {
      */
     async _handleMailNotification(profile: IUserProfile, persist: boolean) {
         // care about mail - send a summary if we have any news
-        let dockerVersions = await this._inquireVersionsForChannel(profile, 'mail', true);
-        dockerVersions = dockerVersions.filter((image) => image.tags.length > 0);
-        if (dockerVersions.length > 0) {
+        let versions = await this._inquireVersionsForChannel(profile, 'mail', true);
+        versions = versions.filter((image) => image.tags.length > 0);
+        if (versions.length > 0) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
-            mailOptions.subject = 'Your docker news';
+            mailOptions.subject = 'Your versionspout news';
             mailOptions.template = 'news'                            
-            this.mailService.send(await this.mailService.compose(mailOptions, { profile, dockerVersions }, profile.htmlEmail));            
+            this.mailService.send(await this.mailService.compose(mailOptions, { profile, versions }, profile.htmlEmail));            
             // now create status objects and save them
-            await Promise.all(dockerVersions.map((image) => {
+            await Promise.all(versions.map((image) => {
                 return Promise.all(image.tags.map((tag) => {
                     const status = new NotificationStatus(profile.email, 'mail', image.subject, tag.tag);                
                     if (persist !== false) {
@@ -220,9 +220,9 @@ export class ProfileService {
                                 subject: manifest.subject
                             },
                             tag: {
-                                name: tag.tag,
-                                data: tag.data,
-                                created: tag.created
+                                name: tag.tag,                                
+                                published: tag.published,
+                                data: tag.data
                             }
                         };
                         return this.httpService.axiosRef(channel.config)

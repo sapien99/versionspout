@@ -58,9 +58,9 @@ export class VersionService implements IVersionService {
             case 'docker': {                                
                 return this.dockerVersionService.fetchVersions(profile);
             }
-            //case 'github': {                                
-            //    return this.githubReleaseService.fetchVersions(profile);
-            //}                
+            case 'github': {                                
+                return this.githubReleaseService.fetchVersions(profile);
+            }                
             default: return null
         }        
     }

@@ -3,17 +3,10 @@ import { IVersionManifest, VersionManifest, IVersionTag, VersionTag, IVersionPro
 export class GithubRelease extends VersionTag implements IVersionTag {
 
     constructor(tag: string, manifest: any) {
-        super('github', tag, manifest);        
-        this.data = [];
-
-        if (manifest) {            
-            this.created = manifest.created ? new Date(manifest.created) : null;    
-            this.data = {
-                actual: {
-                    created: manifest.created ? new Date(manifest.created) : null,   
-                    hash: manifest.hashes[0]
-                }
-            };
+        super('github', tag);
+        this.published = manifest.published_at;        
+        this.data = {
+            url: manifest.html_url
         }        
     }
 }

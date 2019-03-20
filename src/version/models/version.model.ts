@@ -3,7 +3,7 @@ import { IVersionService } from '../../version/version.service';
 export interface IVersionTag {
     readonly type: string;    
     readonly tag: string;    
-    readonly created: Date | null;        
+    readonly published: Date | null;        
     data: any | null;
     isSemver: boolean;    
 }
@@ -27,19 +27,15 @@ export class VersionTag implements IVersionTag {
 
     readonly type: string;
     public tag: string;
-    public created: Date | null;
+    public published: Date | null;
     public isSemver: boolean;
     public data: any;    
 
-    constructor(type: string, tag: string, manifest: any) {
+    constructor(type: string, tag: string) {
         this.type = type;
         this.tag = tag;
-        this.created = null;
-        this.data = null;
-
-        if (manifest) {
-            this.created = manifest.created ? new Date(manifest.created) : null;                
-        }        
+        this.published = null;
+        this.data = null;       
     }
 }
 
