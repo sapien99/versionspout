@@ -1,4 +1,8 @@
 dist
 node_modules
 startmongo.sh
+docker-compose-local.yaml 
+test-creds.yaml
+test-config.yaml
+.test-env
 .idea

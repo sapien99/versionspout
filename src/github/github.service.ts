@@ -10,17 +10,45 @@ export class GithubService implements IVersionProvider {
 
     async listReleases(profile: GithubVersionProfile): Promise<any> {
         try {            
-            const resp:any = await this.httpService.axiosRef({
+
+            const httpConfig: any = {
                 method: 'get',
                 url: `https://api.github.com/repos/${profile.subject}/releases`,
                 headers: {                    
                     'accept': 'application/json'
-                }                    
-              });                      
+                }
+            }
+
+            let proxy = process.env.https_proxy || process.env.HTTPS_PROXY;
+            if (proxy) {
+                Logger.info(`Using proxy ${proxy}`)
+                const proxyRegex = /https*:\/\/((\w+):(\w+)@)*(.*):(\d+)/gm;
+                // 2: user
+                // 3: password
+                // 4: host 
+                // 5: port                
+                const m = proxyRegex.exec(proxy);
+                if (m !== null) {                    
+                    if (m.length > 3) {                        
+                        httpConfig.proxy = {
+                            host: m[4], 
+                            port: m[5]                    
+                        }
+                        if (m[2] && m[3]) {
+                            httpConfig.proxy.auth = {
+                                username: m[2],
+                                password: m[3]
+                            }
+                        }
+                    }                    
+                }                
+            }
+
+            const resp:any = await this.httpService.axiosRef(httpConfig);                      
             return resp.data;                            
         } catch (e) {
-            Logger.error('Creating ovirt-engine authentication token failed', e);
-            return null;
+            Logger.error(`Fetching github repos failed ${e}`);
+            return [];
         }
     }
     /**
