@@ -7,7 +7,7 @@ import { DockerService } from './docker.service';
 export class DockerVersionProfileMock extends VersionProfile implements IVersionProfile {    
     
     constructor() {        
-        super('docker', 'prom/prometheus', '.*', []);
+        super('docker', 'prom/prometheus', null, null, null, [], []);
     }
 }
 

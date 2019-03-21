@@ -21,8 +21,7 @@ export interface IUserProfile {
     readonly htmlEmail: boolean;
     readonly notificationChannels : INotificationChannel[];
     readonly defaults: {
-        notificationChannels: string[],        
-        ignorePatterns: string[]        
+        notificationChannels: string[]        
     }
     readonly subscribedVersions: UserVersionProfile[];        
 }

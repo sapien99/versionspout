@@ -4,6 +4,7 @@ import { GithubRelease, GithubRepository, GithubVersionProfile } from './models/
 import { IVersionProvider } from '../version/version.service';
 import * as _ from 'lodash';
 import { Logger } from '../logger';
+import * as axios from 'axios-https-proxy-fix';
 
 @Injectable()
 export class GithubService implements IVersionProvider {
@@ -44,7 +45,7 @@ export class GithubService implements IVersionProvider {
                 }                
             }
 
-            const resp:any = await this.httpService.axiosRef(httpConfig);                      
+            const resp:any = await axios.default(httpConfig);                      
             return resp.data;                            
         } catch (e) {
             Logger.error(`Fetching github repos failed ${e}`);

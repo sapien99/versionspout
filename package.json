@@ -1,6 +1,6 @@
 {
   "name": "versionspout",
-  "version": "0.9.0",
+  "version": "1.0.5",
   "description": "Version Notifications for docker",
   "author": "",
   "license": "MIT",
@@ -24,6 +24,7 @@
     "@nestjs/mongoose": "^5.2.2",
     "@nestjs/passport": "^5.1.0",
     "async": "^2.6.1",
+    "axios-https-proxy-fix": "^0.17.1",
     "class-transformer": "^0.1.9",
     "class-validator": "^0.9.1",
     "docker-registry-client": "^3.3.0",

@@ -1,4 +1,4 @@
-import { IVersionManifest, VersionManifest, IVersionTag, VersionTag, IVersionProfile, VersionProfile } from './../../version/models/version.model';
+import { IVersionManifest, VersionManifest, IVersionTag, VersionTag, IVersionProfile, VersionProfile, IVersionFilter } from './../../version/models/version.model';
 
 export class DockerTag extends VersionTag implements IVersionTag {
 
@@ -30,8 +30,8 @@ export class DockerManifest extends VersionManifest implements IVersionManifest 
  */
 export class DockerVersionProfile extends VersionProfile implements IVersionProfile {
     
-    constructor(subject: string, semver: string | null, ignorePatterns: string[]) {                        
-        super('docker', subject, semver, ignorePatterns );        
+    constructor(subject: string, filter: IVersionFilter | null, extract: string | null, replace: string | null, drop: string[], keep: string[]) {                        
+        super('docker', subject, filter, extract, replace, drop, keep );        
     }
 
 }

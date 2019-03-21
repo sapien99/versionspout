@@ -3,11 +3,12 @@ import { HttpException, HttpStatus, Injectable, HttpService, Inject } from '@nes
 import { IUserProfile, INotificationStatus, NotificationStatus, UserVersionProfile } from './models/profile.model';
 import { Model } from 'mongoose';
 import * as _ from 'lodash';
-import { VersionManifest, IVersionTag, IVersionManifest } from '../version/models/version.model';
+import { VersionManifest, IVersionTag, IVersionManifest, IVersionFilter } from '../version/models/version.model';
 import { VersionService } from '../version/version.service';
 import { MailService } from '../mail/mail.service';
 import { MailOptions } from '../mail/models/mail.model';
 import { Logger } from '../logger';
+import { Z_FILTERED } from 'zlib';
 
 @Injectable()
 export class ProfileService {
@@ -111,17 +112,11 @@ export class ProfileService {
     /* get the versions for a certain channel */
     async _inquireVersionsForChannel(profile: IUserProfile, channel: string, delta: boolean): Promise<IVersionManifest[]> {                                
 
-        const subscribedVersions = profile.subscribedVersions.map((versionProfile) => {            
-            if (!versionProfile.ignorePatterns || versionProfile.ignorePatterns.length == 0)
-                versionProfile.ignorePatterns = profile.defaults.ignorePatterns || [];                                                    
-            return versionProfile;
-        });        
-
-        const versions: IVersionManifest[] = await this.versionService.fetchAndFilterMany(subscribedVersions);
-        return _.without(await Promise.all(versions.map(async (dockerImage: VersionManifest) => {
+        const versions: IVersionManifest[] = await this.versionService.fetchAndFilterMany(profile.subscribedVersions);
+        return _.without(await Promise.all(versions.map(async (manifest: VersionManifest) => {
 
             // get request to read channels
-            const requirement: UserVersionProfile = this._getSubscribedVersion(profile, dockerImage)
+            const requirement: UserVersionProfile = this._getSubscribedVersion(profile, manifest)
             let validNotificationChannels = requirement.notificationChannels;
             if (!validNotificationChannels || validNotificationChannels.length == 0) validNotificationChannels = profile.defaults.notificationChannels || [];
             // add the webservice channel in all cases - is used for the inquire via rest
@@ -131,16 +126,16 @@ export class ProfileService {
                 return null;
             }             
             // if in "delta mode" we just return the tags since the last call            
-            dockerImage.tags = _.without(await Promise.all(dockerImage.tags.map((tag) => this._checkNotificationStatus(
+            manifest.tags = _.without(await Promise.all(manifest.tags.map((tag) => this._checkNotificationStatus(
                 profile, // profile
                 channel, 
-                dockerImage.subject, 
+                manifest.subject, 
                 tag, // the whole tag object                
                 delta,                
-                requirement.semver.length > 0
+                requirement.filter
                 ))), null);            
 
-            return dockerImage;
+            return manifest;
         })), null);
     }
 
@@ -184,9 +179,9 @@ export class ProfileService {
      * @param image 
      * @param tag 
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IVersionTag, forceState:boolean, forceSemver:boolean) {                                        
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IVersionTag, forceState:boolean, filter: IVersionFilter) {                                        
         // ignore everything matching a regex in the ignorepatterns        
-        if (forceSemver && !tag.isSemver)
+        if (filter && filter.semver && !tag.isSemver)
             return null;        
         if (forceState) {
             const status = new NotificationStatus(profile.email, channel, image, tag.tag);                

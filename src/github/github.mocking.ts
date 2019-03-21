@@ -6,15 +6,15 @@ import { GithubService } from './github.service';
 
 export class GithubVersionProfileMock extends VersionProfile implements IVersionProfile {    
     
-    constructor() {        
-        super('github', 'prom/prometheus', '.*', []);
+    constructor() {                
+        super('github', 'prometheus/prometheus', null, null, null, [], []);
     }
 }
 
 export class GithubServiceMock extends GithubService implements IVersionProvider {
 
     async fetchVersions( profile: GithubVersionProfile): Promise<GithubRepository> {
-        return new GithubRepository('prom/prometheus', []);        
+        return new GithubRepository('prometheus/prometheus', []);        
     }
 
     constructor() {

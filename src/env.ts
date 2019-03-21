@@ -37,6 +37,7 @@ function readSmtpConfig(configpath, secretpath) {
 
 function readMongoConfig(configpath, secretpath) {
   if (path) {
+    console.log(configpath);
     const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));    
     return {
       url: config.mongo.url,
@@ -81,7 +82,7 @@ export const globals = {
   },
 };
 
-function getOsEnv(key: string): string | undefined {
+function getOsEnv(key: string): string | undefined {  
   return process.env[key];
 }
 

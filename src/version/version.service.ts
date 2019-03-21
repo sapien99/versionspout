@@ -45,7 +45,7 @@ export class VersionService implements IVersionService {
         if (!_.isObject(profile))
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);        
         const manifest: VersionManifest = await this.fetchVersions(profile)
-        Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);
+        Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);        
         return this.filterSemverVersions(manifest, profile);            
     }
 
@@ -73,24 +73,48 @@ export class VersionService implements IVersionService {
         return new Promise<VersionManifest>(async (resolve, reject) => {
             // filter the tags we need
             const filtered = manifest.tags.filter((tagObj) => {      
-                if (_.some(profile.ignorePatterns, (pattern) => tagObj.tag.match(new RegExp(pattern)))) {
-                    Logger.debug(`PATTERN CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.ignorePatterns} -> false`);                    
+                
+                // drop
+                if (_.some(profile.drop, (pattern) => tagObj.tag.match(new RegExp(pattern)))) {
+                    Logger.debug(`DROP PATTERN CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.drop} -> false`);                    
                     return false;                  
                 }
+
+                //keep
+                if (profile.keep && profile.keep.length > 0 && !_.some(profile.keep, (pattern) => tagObj.tag.match(new RegExp(pattern)))) {
+                    Logger.debug(`KEEP PATTERN CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.keep} -> false`);                    
+                    return false;                  
+                }
+
+                //extract
+                if (profile.extract) {                    
+                    const versionExtractionRegex = RegExp(profile.extract);                    
+                    let m = versionExtractionRegex.exec(tagObj.tag);
+                        if (m && m.length > 0) {
+                            (<any>tagObj).tag = m[1];
+                        }                        
+                }
+
+                //todo: replace
+
+                //filter                
                 if (semver.valid(tagObj.tag)) {
-                    let keep = true;
-                    keep = semver.satisfies(tagObj.tag, profile.semver);                    
-                    Logger.debug(`SEMVER CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.semver} -> ${keep}`);                    
                     tagObj.isSemver = true;                
-                    return keep;
-                }                
-                tagObj.isSemver = false;                
+                    if (profile.filter.semver) {                        
+                        let keep = true;
+                        keep = semver.satisfies(tagObj.tag, profile.filter.semver);                    
+                        Logger.debug(`SEMVER CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.filter} -> ${keep}`);                                        
+                        return keep;
+                    }                
+                    tagObj.isSemver = false;                
+                }
+                
                 return true; 
             });
             manifest.tags = filtered;
             Logger.debug(`Shrinked list down to ${JSON.stringify(manifest.tags.length)} for ${manifest.subject}: ${JSON.stringify(manifest.tags)}`);
             if (profile)
-                manifest.semver = profile.semver;
+                manifest.filter = profile.filter;
             resolve(manifest);
         });
     }

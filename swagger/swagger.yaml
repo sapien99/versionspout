@@ -259,9 +259,7 @@ components:
             - docker
             - github
         subject:
-          type: string        
-        semver:
-          type: string
+          type: string                
         fetched:
           type: string
           format: date-time
@@ -294,20 +292,38 @@ components:
           type: string
           description: docker repository/user
             ([docker.io/]sapien99)                
-        semver:
+        filter:
+          type: object
+          properties:
+            semver:
+              type: string            
+              description: semver range user is interested in (or not set for no semver check) (>2.7.0)            
+            published:
+              type: string
+              description: published earlier or later than a given timestamp 
+        extract:
           type: string
-          description: semver range user is interested in (or not set for no semver check)
-            (>2.7.0)
+          description: regular expression to extract version for semver matching. Extracts 
+            first group and uses it as version to compare against a possible semver check
+        replace:
+          type: string
+          description: replaces version before semver check to bring it into semver compatible format.
+            Uses js string templates to make ${version}.0 from 1.12 to 1.12.0
+        drop:
+          type: array
+          items:
+            type: string
+          description: list of regular expressions. Matches will be dropped. Done prior to keep
+        keep:
+          type: array
+          items:
+            type: string
+          description: list of regular expressions. Non-Matches will be dropped. Done after drop
         notificationChannels:
           type: array
           items:
             type: string
-          description: reference to defined notification channels
-        ignorePatterns: 
-          type: array
-          items:
-            type: string
-          description: regex ignore patterns for tags (to skip latest, *.rc etc.)
+          description: reference to defined notification channels        
       required: 
           - subject                    
     UserProfile:
@@ -349,7 +365,7 @@ components:
         subscribedDockerVersions:
           type: array
           items:
-            $ref: '#/components/schemas/DockerImageVersionProfile'
+            $ref: '#/components/schemas/VersionProfile'
       required: 
           - email
           - subscribedDockerVersions

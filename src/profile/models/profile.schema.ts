@@ -20,6 +20,14 @@ export const NotificationChannelSchema = new mongoose.Schema({
     _id : false
 });
 
+export const VersionFilterSchema = new mongoose.Schema({    
+    semver: { type: String }, 
+    published: { type: String }, 
+}, {
+    versionKey: false,
+    _id : false
+});
+
 export const UserProfileSchema = new mongoose.Schema({    
     _id: { type: String },
     email: { type: String },
@@ -37,9 +45,12 @@ export const UserProfileSchema = new mongoose.Schema({
     subscribedVersions: [{
         type: { type: String },                
         notificationChannels: [{ type: String }],        
-        ignorePatterns: [{ type: String }],                
-        semver: { type: String },                
-        subject: { type: String },        
+        keep: [{ type: String }],  //keep patterns
+        drop: [{ type: String }],  //drop patterns               
+        replace: { type: String }, //replace ${ersion}.1 - regex replace
+        filter: { type: VersionFilterSchema },  //fiter
+        extract: { type: String }, //extract version             
+        subject: { type: String },
     }]
 }, {
     versionKey: false

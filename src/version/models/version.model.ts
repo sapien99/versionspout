@@ -13,14 +13,24 @@ export interface IVersionManifest {
     readonly subject: string;    
     readonly fetched: Date;
     readonly tags: IVersionTag[];
+    readonly filter: IVersionFilter;
+}
+
+export interface IVersionFilter {    
     readonly semver: string;
+    readonly published: string;
 }
 
 export interface IVersionProfile {
     
     readonly subject: string;
     readonly type: string;    
-    semver: string | null;    
+    filter: IVersionFilter | null;    
+    extract: string | null;
+    replace: string | null;
+    drop: string[];
+    keep: string[];    
+
 }
 
 export class VersionTag implements IVersionTag {
@@ -39,13 +49,24 @@ export class VersionTag implements IVersionTag {
     }
 }
 
+export class VersionFilter implements IVersionFilter {
+
+    readonly semver: string;    
+    readonly published: string;    
+
+    constructor(semver: string, published: string) {
+        this.semver = semver;
+        this.published = published;
+    }
+}
+
 export class VersionManifest implements IVersionManifest {
 
     public readonly type: string;        
     public readonly subject: string;    
     public readonly fetched: Date;
-    public tags: IVersionTag[];
-    public semver: string;
+    public tags: IVersionTag[];    
+    public filter: IVersionFilter;
 
     constructor(type: string, subject: string, tags: IVersionTag[]) {
         this.type = type;        
@@ -62,16 +83,22 @@ export class VersionProfile implements IVersionProfile {
     
     public readonly subject: string;
     public readonly type: string;    
-    public semver: string | null;    
-    public ignorePatterns: string[];
-
+    public filter: IVersionFilter | null;    
+    public extract: string | null;
+    public replace: string | null;
+    public drop: string[];
+    public keep: string[];    
+    
     public static service: IVersionService;
 
-    constructor(type: string, subject: string, semver: string | null, ignorePatterns: string[] | null) {
+    constructor(type: string, subject: string, filter: IVersionFilter | null, extract: string | null, replace: string | null, drop: string[] | null, keep: string[] | null) {
         this.type = type;        
         this.subject = subject;        
-        this.semver = semver;     
-        this.ignorePatterns = ignorePatterns;
+        this.filter = filter;     
+        this.extract = extract;
+        this.replace = replace;
+        this.drop = drop;
+        this.keep = keep;
     }
 
 }
