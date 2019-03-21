@@ -46,6 +46,8 @@ export class VersionService implements IVersionService {
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);        
         const manifest: VersionManifest = await this.fetchVersions(profile)
         Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);        
+        // sort tags descending by published date
+        manifest.tags = _.orderBy(manifest.tags, ['published'], ['desc'])
         return this.filterSemverVersions(manifest, profile);            
     }
 

@@ -64,9 +64,9 @@ export class DockerService implements IVersionProvider {
                 }));
 
                 let cacheEntry: DockerManifest = new DockerManifest(profile.subject, []);                
-                tagsResult.tags.reverse().forEach((tag) => {                    
+                tagsResult.tags.forEach((tag) => {                    
                     cacheEntry.tags.push(new DockerTag(tag, tagMap[tag]));
-                });
+                });                
                 
                 // save data in cache
                 const mongooseModel = new this.dockerVersionModel(cacheEntry);

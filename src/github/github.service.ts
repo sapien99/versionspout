@@ -87,7 +87,7 @@ export class GithubService implements IVersionProvider {
             mongooseModel._id = _id;
             await mongooseModel.save({ upsert: true });          
             
-            resolve(cacheEntry);            
+            resolve(_.orderBy(cacheEntry, ['published'], ['desc']));            
         });
     }
 
