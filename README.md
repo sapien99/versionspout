@@ -38,25 +38,27 @@ Userprofile contains the docker images you are interested in, as well as the cha
             "name" : "mail"
         }, 
         {
-            "name" : "webhook1", 
+            "name" : "some-webhook", 
             "type" : "webhook", 
             "config" : {
                 "url" : "http://localhost.com:3001/"
             }
         }
     ], 
-    "subscribedDockerVersions" : [
+    "subscribedVersions" : [
         {
             "notificationChannels" : [
-
+               "some-webhook"
             ], 
-            "ignorePatterns" : [
+            "drop" : [
                 "development", 
                 "latest", 
                 "master", 
                 ".*rc.*"
             ], 
-            "semver" : ">2.7", 
+            "filter": {
+              "semver" : ">2.7", 
+            },
             "subject" : "prom/prometheus" 
         }
     ]
