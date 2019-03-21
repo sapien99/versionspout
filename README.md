@@ -28,7 +28,7 @@ Userprofile contains the docker images you are interested in, as well as the cha
 { 
     "defaults" : {
         "notificationChannels" : [
-            "webhook1"
+            "some-webhook"
         ]
     }, 
     "email" : "someone@gmail.com", 
@@ -46,10 +46,7 @@ Userprofile contains the docker images you are interested in, as well as the cha
         }
     ], 
     "subscribedVersions" : [
-        {
-            "notificationChannels" : [
-               "some-webhook"
-            ], 
+        {            
             "drop" : [
                 "development", 
                 "latest", 
@@ -57,7 +54,7 @@ Userprofile contains the docker images you are interested in, as well as the cha
                 ".*rc.*"
             ], 
             "filter": {
-              "semver" : ">2.7", 
+              "semver" : ">2.8.0", 
             },
             "subject" : "prom/prometheus" 
         }
