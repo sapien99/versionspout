@@ -8,7 +8,7 @@ import { VersionService } from '../version/version.service';
 import { MailService } from '../mail/mail.service';
 import { MailOptions } from '../mail/models/mail.model';
 import { Logger } from '../logger';
-import { Z_FILTERED } from 'zlib';
+import * as request from 'request-promise-native';
 
 @Injectable()
 export class ProfileService {
@@ -219,8 +219,8 @@ export class ProfileService {
                                 published: tag.published,
                                 data: tag.data
                             }
-                        };
-                        return this.httpService.axiosRef(channel.config)
+                        };                        
+                        return request(channel.config)
                         .then(async () => {
                             Logger.info(`webhook ${channel.config.url} of channel ${channel.name} called because ${manifest.subject}:${tag.tag}`);
                             const status = new NotificationStatus(profile.email, channel.name, manifest.subject, tag.tag);                

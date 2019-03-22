@@ -4,7 +4,7 @@ import { GithubRelease, GithubRepository, GithubVersionProfile } from './models/
 import { IVersionProvider } from '../version/version.service';
 import * as _ from 'lodash';
 import { Logger } from '../logger';
-import * as axios from 'axios-https-proxy-fix';
+import * as request from 'request-promise-native';
 
 @Injectable()
 export class GithubService implements IVersionProvider {
@@ -20,32 +20,7 @@ export class GithubService implements IVersionProvider {
                 }
             }
 
-            let proxy = process.env.https_proxy || process.env.HTTPS_PROXY;
-            if (proxy) {
-                Logger.info(`Using proxy ${proxy}`)
-                const proxyRegex = /https*:\/\/((\w+):(\w+)@)*(.*):(\d+)/gm;
-                // 2: user
-                // 3: password
-                // 4: host 
-                // 5: port                
-                const m = proxyRegex.exec(proxy);
-                if (m !== null) {                    
-                    if (m.length > 3) {                        
-                        httpConfig.proxy = {
-                            host: m[4], 
-                            port: m[5]                    
-                        }
-                        if (m[2] && m[3]) {
-                            httpConfig.proxy.auth = {
-                                username: m[2],
-                                password: m[3]
-                            }
-                        }
-                    }                    
-                }                
-            }
-
-            const resp:any = await axios.default(httpConfig);                      
+            const resp:any = await request(httpConfig);                      
             return resp.data;                            
         } catch (e) {
             Logger.error(`Fetching github repos failed ${e}`);

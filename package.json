@@ -24,7 +24,6 @@
     "@nestjs/mongoose": "^5.2.2",
     "@nestjs/passport": "^5.1.0",
     "async": "^2.6.1",
-    "axios-https-proxy-fix": "^0.17.1",
     "class-transformer": "^0.1.9",
     "class-validator": "^0.9.1",
     "docker-registry-client": "^3.3.0",
@@ -35,7 +34,10 @@
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "passport-jwt": "^4.0.0",
+    "r2": "^2.0.1",
     "reflect-metadata": "^0.1.12",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
     "rxjs": "^6.2.2",
     "semver": "^5.5.1",
     "typescript": "^3.0.1"
