@@ -117,7 +117,7 @@ export class ProfileService {
 
             // get request to read channels
             const requirement: UserVersionProfile = this._getSubscribedVersion(profile, manifest)
-            let validNotificationChannels = requirement.notificationChannels;
+            let validNotificationChannels = requirement && requirement.notificationChannels;
             if (!validNotificationChannels || validNotificationChannels.length == 0) validNotificationChannels = profile.defaults.notificationChannels || [];
             // add the webservice channel in all cases - is used for the inquire via rest
             validNotificationChannels.push('ws');
@@ -209,8 +209,11 @@ export class ProfileService {
             if (channel.type == 'webhook') {                
                 return Promise.all(versions[index].map((manifest) => {
                     return Promise.all(manifest.tags.map((tag) => {
-                        channel.config.method = 'POST'
-                        channel.config.data = {
+                        channel.config.method = 'POST';
+                        channel.config.headers = {
+                            'User-Agent': `versionspout:${globals.app.version}` 
+                        };
+                        channel.config.json = {
                             manifest: {
                                 subject: manifest.subject
                             },

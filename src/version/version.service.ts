@@ -43,12 +43,15 @@ export class VersionService implements IVersionService {
      */
     async fetchAndFilter( profile: VersionProfile ): Promise<IVersionManifest> {        
         if (!_.isObject(profile))
-            throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);        
-        const manifest: VersionManifest = await this.fetchVersions(profile)
+            throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);                
+        const manifest: VersionManifest = await this.fetchVersions(profile)        
+        if (!manifest.tags) {
+            manifest.tags = [];
+        }
         Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);        
         // sort tags descending by published date
         manifest.tags = _.orderBy(manifest.tags, ['published'], ['desc'])
-        return this.filterSemverVersions(manifest, profile);            
+        return this.filterSemverVersions(manifest, profile);                    
     }
 
     /**
@@ -99,22 +102,43 @@ export class VersionService implements IVersionService {
 
                 //todo: replace
 
-                //filter                
+                //filter published
+                if (profile.filter.published) {                       
+                    let lh = profile.filter.published[0]
+                    let match = profile.filter.published;
+                    if (['<','>'].indexOf(lh) > -1) {
+                        match = profile.filter.published.substring(1,profile.filter.published.length);
+                    }                   
+                    let keep = true;      
+                    const dateFrom = new Date(match);
+                    dateFrom.setHours(0,0,0,0)
+                    const dateTag = tagObj.published;
+                    dateTag.setHours(0,0,0,0)
+                    if (lh === '>') {
+                        keep = dateTag > dateFrom;
+                    } else {
+                        keep = dateTag < dateFrom;
+                    }                  
+                    Logger.debug(`PUBLISHED CHECK: ${profile.subject}: tag=${dateTag} ${lh} filter=${dateFrom} -> ${keep}`);                                        
+                    if (!keep) 
+                        return false;
+                }                
+
+                //filter semver                
                 if (semver.valid(tagObj.tag)) {
                     tagObj.isSemver = true;                
                     if (profile.filter.semver) {                        
                         let keep = true;
                         keep = semver.satisfies(tagObj.tag, profile.filter.semver);                    
-                        Logger.debug(`SEMVER CHECK: ${profile.subject}:${tagObj.tag} -> ${profile.filter} -> ${keep}`);                                        
-                        return keep;
-                    }                
-                    tagObj.isSemver = false;                
+                        Logger.debug(`SEMVER CHECK: ${profile.subject}: tag=${tagObj.tag} -> filter=${profile.filter} -> ${keep}`);                                        
+                        return keep;                            
+                    }
+                    tagObj.isSemver = false;                    
                 }
-                
                 return true; 
             });
             manifest.tags = filtered;
-            Logger.debug(`Shrinked list down to ${JSON.stringify(manifest.tags.length)} for ${manifest.subject}: ${JSON.stringify(manifest.tags)}`);
+            Logger.debug(`Shrinked list down to ${JSON.stringify(manifest.tags.length)} for ${manifest.subject}`);
             if (profile)
                 manifest.filter = profile.filter;
             resolve(manifest);

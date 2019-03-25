@@ -43,8 +43,7 @@ export class DockerService implements IVersionProvider {
             const cachedEntry = await this.dockerVersionModel.findById(_id);
             var now = new Date();
             now.setDate(now.getDate()+1);            
-            if (cachedEntry && 
-                new Date(cachedEntry.fetched).getTime() < (new Date().getTime() + 1*24*60*60*1000)) {
+            if (cachedEntry) {
                 Logger.debug(`Fetched repo: ${profile.subject} from cache`);
                 return resolve(cachedEntry);                                
             }
@@ -66,9 +65,11 @@ export class DockerService implements IVersionProvider {
                 let cacheEntry: DockerManifest = new DockerManifest(profile.subject, []);                
                 tagsResult.tags.forEach((tag) => {                    
                     cacheEntry.tags.push(new DockerTag(tag, tagMap[tag]));
-                });                
+                });            
+                // order by publish date desb
+                cacheEntry.tags = _.orderBy(cacheEntry.tags, ['published'], ['desc']);    
                 
-                // save data in cache
+                // save data in cache                
                 const mongooseModel = new this.dockerVersionModel(cacheEntry);
                 mongooseModel._id = _id;
                 await mongooseModel.save({ upsert: true });          

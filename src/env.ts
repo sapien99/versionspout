@@ -41,6 +41,7 @@ function readMongoConfig(configpath, secretpath) {
     const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));    
     return {
       url: config.mongo.url,
+      cachetime: config.mongo.cachetime || 300,
     };
   }
 }
@@ -69,7 +70,7 @@ export const globals = {
   ),  
   mongo: readMongoConfig(
     getOsEnv('CONFIG') || path.join(__dirname, '..', 'mounts', 'configmaps', 'config.yaml'),
-    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')
+    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')    
   ),
   path: {
     root: path.join(__dirname, '..'),    
