@@ -44,14 +44,20 @@ export class VersionService implements IVersionService {
     async fetchAndFilter( profile: VersionProfile ): Promise<IVersionManifest> {        
         if (!_.isObject(profile))
             throw new HttpException('Invalid input data', HttpStatus.BAD_REQUEST);                
-        const manifest: VersionManifest = await this.fetchVersions(profile)        
-        if (!manifest.tags) {
-            manifest.tags = [];
+        let manifest: VersionManifest = null;
+        try {
+            manifest = await this.fetchVersions(profile)        
+            if (!manifest.tags) {
+                manifest.tags = [];
+            }
+            Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);        
+            // sort tags descending by published date
+            manifest.tags = _.orderBy(manifest.tags, ['published'], ['desc'])
+        } catch(e) {
+            manifest = new VersionManifest(profile.type, profile.subject, []);
+            Logger.warn(`Error fetching tags for ${manifest.subject}`);            
         }
-        Logger.info(`Found ${manifest.tags.length} tags for ${manifest.subject}`);        
-        // sort tags descending by published date
-        manifest.tags = _.orderBy(manifest.tags, ['published'], ['desc'])
-        return this.filterSemverVersions(manifest, profile);                    
+        return this.filterSemverVersions(manifest, profile);                            
     }
 
     /**
@@ -102,7 +108,7 @@ export class VersionService implements IVersionService {
 
                 //todo: replace
 
-                //filter published
+                //filter published                
                 if (profile.filter.published) {                       
                     let lh = profile.filter.published[0]
                     let match = profile.filter.published;

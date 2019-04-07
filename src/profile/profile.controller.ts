@@ -47,7 +47,17 @@ export class ProfileController {
     }
 
     /**
-     * Get news (channel ws), persists the status
+     * Get versions, returns the versions respecting the profile, 
+     * but indipendent of the versions already returned
+     * @param body 
+     */
+    @Get(':id/versions')
+    async inquireVersions(@Param('id') id) {        
+        return await this.profileService.inquireVersions(id);
+    }
+
+    /**
+     * Get news (channel ws), persists the status and return only news
      * @param body 
      */
     @Get(':id/news')
