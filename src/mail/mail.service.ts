@@ -28,8 +28,8 @@ export class MailService {
       composedMail.to = globals.mail.to || config.to;
       composedMail.cc = globals.mail.cc || config.cc;
       composedMail.bcc = globals.mail.bcc || config.bcc;
-      composedMail.subject = globals.mail.subject || config.subject;      
-      composedMail.text = await MailService._renderFile(textPath, emailData);      
+      composedMail.subject = globals.mail.subject || config.subject;
+      composedMail.text = await MailService._renderFile(textPath, emailData);
       if (sendHtmlMail) {
         composedMail.html = await MailService._renderFile(htmlPath, emailData);
         composedMail.attachments = _.map(globals.mail.attachments || config.attachments, (attachment) => {
@@ -64,7 +64,7 @@ export class MailService {
         host: globals.mail.host,
         port: globals.mail.port,
         secure: globals.mail.secure,
-        requireTLS: true,
+        requireTLS: globals.mail.secure && globals.mail.requireTLS || false,
         auth: globals.mail.secure ? {
           user: globals.mail.user,
           pass: globals.mail.password,

@@ -6,52 +6,48 @@ import * as yaml from 'js-yaml';
 declare function require(name: string);
 const pkg = require('../package.json');
 
-function readSmtpConfig(configpath, secretpath) {
-  if (path) {
-    const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));
-    const secret = yaml.safeLoad(fs.readFileSync(secretpath, 'utf8'));
-    if (!config.smtp || !config.smtp.enabled)
-      return {
-        enabled: false
-      }
-    return {
-      enabled: true,
-      host: config.smtp.host,
-      port: config.smtp.port || 25,
-      user: secret.smtp.user,      
-      password: secret.smtp.password,
-      secure: config.smtp.secure || false,    
-      connectionTimeout : normalizeNumber(process.env.MAIL_CONNECTIONTIMEOUT || config.smtp.connectionTimeout || '5000'),
-      greetingTimeout : normalizeNumber(process.env.MAIL_GREETINGTIMEOUT || config.smtp.greetingTimeout || '5000'),
-      socketTimeout : normalizeNumber(process.env.MAIL_SOCKETTIMEOUT || config.smtp.socketTimeout || '5000'),
-      // defaults
-      from: config.smtp.from,
-      to: config.smtp.to,
-      cc: config.smtp.cc,
-      bcc: config.smtp.bcc,
-      subject: config.smtp.subject,
-      attachments: config.smtp.attachments,
-    };
-  }
+function readSmtpConfig() {
+  return {
+    enabled: process.env.SMTP_HOST || false,
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT || 25,
+    user: process.env.SMTP_USER,
+    password: process.env.SMTP_PASSWORD,
+    secure: process.env.SMTP_SECURE == 'true' || false,
+    connectionTimeout : normalizeNumber(process.env.SMTP_CONNECTIONTIMEOUT || '5000'),
+    greetingTimeout : normalizeNumber(process.env.SMTP_GREETINGTIMEOUT || '5000'),
+    socketTimeout : normalizeNumber(process.env.SMTP_SOCKETTIMEOUT || '5000'),
+    requireTLS: process.env.SMTP_REQUIRETLS == 'true' || process.env.SMTP_SECURE == 'true' || false,
+    // defaults
+    from: process.env.SMTP_FROM || '',
+    to: process.env.SMTP_TO || '',
+    cc: process.env.SMTP_CC || '',
+    bcc: process.env.SMTP_BCC || '',
+    subject: process.env.SMTP_SUBJECT || '',
+    attachments: []
+  };
 }
 
-function readMongoConfig(configpath, secretpath) {
-  if (path) {
-    console.log(configpath);
-    const config = yaml.safeLoad(fs.readFileSync(configpath, 'utf8'));    
-    return {
-      url: config.mongo.url,
-      cachetime: config.mongo.cachetime || 300,
-    };
-  }
+function readMongoConfig() {
+  return {
+    url: process.env.MONGO_URL || '',
+    cachetime: normalizeNumber(process.env.MONGO_CACHETIME || '300'),
+  };
+}
+
+function readGithubConfig() {
+  return {
+    clientId: process.env.GITHUB_ID || '',
+    clientSecret: normalizeNumber(process.env.GITHUB_SECRET || ''),
+  };
 }
 
 /**
  * Environment and global variables
  */
-export const globals = {    
+export const globals = {
   node: process.env.NODE_ENV || 'development',
-  isProduction: process.env.NODE_ENV === 'production',  
+  isProduction: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test',
   isDevelopment: process.env.NODE_ENV === 'development',
   expressInstance: null,
@@ -64,16 +60,11 @@ export const globals = {
     port: normalizeNumber(process.env.PORT || '3000'),
     banner: toBool(getOsEnv('APP_BANNER')),
   },
-  mail: readSmtpConfig(
-    getOsEnv('CONFIG') || path.join(__dirname, '..', 'mounts', 'configmaps', 'config.yaml'),
-    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')
-  ),  
-  mongo: readMongoConfig(
-    getOsEnv('CONFIG') || path.join(__dirname, '..', 'mounts', 'configmaps', 'config.yaml'),
-    getOsEnv('PASSWORDS') || path.join(__dirname, '..', 'mounts', 'secrets', 'creds.yaml')    
-  ),
+  mail: readSmtpConfig(),
+  mongo: readMongoConfig(),
+  github: readGithubConfig(),
   path: {
-    root: path.join(__dirname, '..'),    
+    root: path.join(__dirname, '..'),
     assets: getOsEnv('ASSETS') || path.join(__dirname, '..', 'mounts', 'assets'),
   },
   log: {
@@ -83,7 +74,7 @@ export const globals = {
   },
 };
 
-function getOsEnv(key: string): string | undefined {  
+function getOsEnv(key: string): string | undefined {
   return process.env[key];
 }
 

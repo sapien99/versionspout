@@ -12,25 +12,25 @@ import * as request from 'request-promise-native';
 
 @Injectable()
 export class ProfileService {
-    
+
     /**
      * Save ProfileModel in db
      * @param profile
      */
-    async createProfile(profile: IUserProfile) {                
-        // save profilemodel in db       
-        let resp = await this.profileModel.findByIdAndUpdate( profile.email, profile, { upsert: true, new: true, setDefaultsOnInsert: true } );                
+    async createProfile(profile: IUserProfile) {
+        // save profilemodel in db
+        let resp = await this.profileModel.findByIdAndUpdate( profile.email, profile, { upsert: true, new: true, setDefaultsOnInsert: true } );
         Logger.info(`Profile ${profile.email} touched`);
-        
+
         if (globals.mail.enabled) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
             mailOptions.subject = 'Welcome to versionspout';
-            mailOptions.template = 'signup'                    
+            mailOptions.template = 'signup'
             this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
             resp.notificationMailSent = true;
         }
-        
+
         return resp;
     }
 
@@ -38,7 +38,7 @@ export class ProfileService {
      * Get ProfileModel from db
      * @param email email of the profiles user
      */
-    async findProfile(email: string): Promise<IUserProfile | null> {        
+    async findProfile(email: string): Promise<IUserProfile | null> {
         // TODO: use guard to check permission
         return this.profileModel.findById( email );
     }
@@ -47,7 +47,7 @@ export class ProfileService {
      * Update existing ProfileModel
      * @param email email of the profiles user
      */
-    async updateProfile(email: string, profile: IUserProfile): Promise<IUserProfile | null> {                        
+    async updateProfile(email: string, profile: IUserProfile): Promise<IUserProfile | null> {
         // TODO: use guard to check permission
         return this.profileModel.findByIdAndUpdate( email, profile );
     }
@@ -56,18 +56,18 @@ export class ProfileService {
      * Delete existing ProfileModel
      * @param email email of the profiles user
      */
-    async deleteProfile(email: string) {        
-        // TODO: use guard to check permission        
+    async deleteProfile(email: string) {
+        // TODO: use guard to check permission
         const profile = await this.profileModel.findById( email );
         if (!profile)
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND); 
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
 
         if (globals.mail.enabled) {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
             mailOptions.subject = 'You deleted your account on versionspout';
-            mailOptions.template = 'delete'                    
-            this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));            
+            mailOptions.template = 'delete'
+            this.mailService.send(await this.mailService.compose(mailOptions, {profile: profile}, true ));
         }
 
         return this.profileModel.findByIdAndRemove( email );
@@ -81,9 +81,9 @@ export class ProfileService {
     async inquireVersions(email: string): Promise<IVersionManifest[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         return this._inquireVersionsForChannel(profile, 'ws', false);
-    }                        
+    }
 
     /**
      * Get Version comparison for docker artifacts of this profile. This one
@@ -93,8 +93,8 @@ export class ProfileService {
     async inquireVersionNews(email: string, persist: boolean): Promise<IVersionManifest[]> {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-            
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+
         const versions = await this._inquireVersionsForChannel(profile, 'ws', true);
         // now create status objects and save them
         await Promise.all(versions.map((manifest) => {
@@ -102,15 +102,15 @@ export class ProfileService {
                 const status = new NotificationStatus(profile.email, 'ws', manifest.subject, tag.tag);
                 if (persist !== false) {
                     Logger.info(`Created notification status ${status._id}`);
-                    return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                    return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});
                 }
             }));
         }));
         return versions;
-    }                        
-    
+    }
+
     /* get the versions for a certain channel */
-    async _inquireVersionsForChannel(profile: IUserProfile, channel: string, delta: boolean): Promise<IVersionManifest[]> {                                
+    async _inquireVersionsForChannel(profile: IUserProfile, channel: string, delta: boolean): Promise<IVersionManifest[]> {
 
         const versions: IVersionManifest[] = await this.versionService.fetchAndFilterMany(profile.subscribedVersions);
         return _.without(await Promise.all(versions.map(async (manifest: VersionManifest) => {
@@ -124,16 +124,16 @@ export class ProfileService {
             // if not matching the channel skip the whole image
             if (validNotificationChannels.indexOf(channel) == -1) {
                 return null;
-            }             
-            // if in "delta mode" we just return the tags since the last call            
+            }
+            // if in "delta mode" we just return the tags since the last call
             manifest.tags = _.without(await Promise.all(manifest.tags.map((tag) => this._checkNotificationStatus(
                 profile, // profile
-                channel, 
-                manifest.subject, 
-                tag, // the whole tag object                
-                delta,                
+                channel,
+                manifest.subject,
+                tag, // the whole tag object
+                delta,
                 requirement.filter
-                ))), null);            
+                ))), null);
 
             return manifest;
         })), null);
@@ -141,13 +141,13 @@ export class ProfileService {
 
     _getSubscribedVersion(profile: IUserProfile, image: IVersionManifest): UserVersionProfile {
         return profile.subscribedVersions.find((img) => {
-            return img.subject === image.subject           
+            return img.subject === image.subject
         });
     }
 
     /**
      * Email notifications
-     * @param profile 
+     * @param profile
      */
     async _handleMailNotification(profile: IUserProfile, persist: boolean) {
         // care about mail - send a summary if we have any news
@@ -157,34 +157,34 @@ export class ProfileService {
             const mailOptions = new MailOptions();
             mailOptions.to = profile.email;
             mailOptions.subject = 'Your versionspout news';
-            mailOptions.template = 'news'                            
-            this.mailService.send(await this.mailService.compose(mailOptions, { profile, versions }, profile.htmlEmail));            
+            mailOptions.template = 'news'
+            this.mailService.send(await this.mailService.compose(mailOptions, { profile, versions }, profile.htmlEmail));
             // now create status objects and save them
             await Promise.all(versions.map((image) => {
                 return Promise.all(image.tags.map((tag) => {
-                    const status = new NotificationStatus(profile.email, 'mail', image.subject, tag.tag);                
+                    const status = new NotificationStatus(profile.email, 'mail', image.subject, tag.tag);
                     if (persist !== false) {
                         Logger.debug(`Created notification status ${status._id}`);
-                        return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                        return this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});
                     }
                 }));
             }));
-        }        
+        }
     }
 
     /**
      * Save NotificationStatus object and return it if it was newly created - or null otherwise
-     * @param profile 
-     * @param channel 
-     * @param image 
-     * @param tag 
+     * @param profile
+     * @param channel
+     * @param image
+     * @param tag
      */
-    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IVersionTag, forceState:boolean, filter: IVersionFilter) {                                        
-        // ignore everything matching a regex in the ignorepatterns        
+    async _checkNotificationStatus(profile: IUserProfile, channel:string, image:string, tag: IVersionTag, forceState:boolean, filter: IVersionFilter) {
+        // ignore everything matching a regex in the ignorepatterns
         if (filter && filter.semver && !tag.isSemver)
-            return null;        
+            return null;
         if (forceState) {
-            const status = new NotificationStatus(profile.email, channel, image, tag.tag);                
+            const status = new NotificationStatus(profile.email, channel, image, tag.tag);
             const notificationStatus = await this.notifcationstatusModel.findById( status._id, status, { upsert: true, new: false, setDefaultsOnInsert: true })
             if (notificationStatus == null) // notificationstatus was newly created and therefor not existing
                 return tag;
@@ -196,66 +196,68 @@ export class ProfileService {
 
     /**
      * Additionan Notifications (webhook etc.)
-     * @param profile 
+     * @param profile
      */
     async _handlAdditinalNotifications(profile: IUserProfile, persist: boolean) {
         // care about webhooks - call them fire and forget
         const versions = await Promise.all(profile.notificationChannels.map(async (channel) => {
-            if (channel.type == 'mail') 
+            if (channel.type == 'mail')
                 return [];
             return await this._inquireVersionsForChannel(profile, channel.name, true);
         }));
-        profile.notificationChannels.map(async (channel, index) => {                        
-            if (channel.type == 'webhook') {                
+        profile.notificationChannels.map(async (channel, index) => {
+            if (channel.type == 'webhook') {
                 return Promise.all(versions[index].map((manifest) => {
                     return Promise.all(manifest.tags.map((tag) => {
                         channel.config.method = 'POST';
                         channel.config.headers = {
-                            'User-Agent': `versionspout:${globals.app.version}` 
+                            'User-Agent': `versionspout:${globals.app.version}`
                         };
                         channel.config.json = {
                             manifest: {
                                 subject: manifest.subject
                             },
                             tag: {
-                                name: tag.tag,                                
+                                name: tag.tag,
                                 published: tag.published,
                                 data: tag.data
                             }
-                        };                        
+                        };
                         return request(channel.config)
                         .then(async () => {
                             Logger.info(`webhook ${channel.config.url} of channel ${channel.name} called because ${manifest.subject}:${tag.tag}`);
-                            const status = new NotificationStatus(profile.email, channel.name, manifest.subject, tag.tag);                
+                            const status = new NotificationStatus(profile.email, channel.name, manifest.subject, tag.tag);
                             if (persist !== false) {
                                 Logger.debug(`Created notification status ${status._id}`);
-                                await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});                                                                                    
+                                await this.notifcationstatusModel.findByIdAndUpdate( status._id, status, { upsert: true, new: true, setDefaultsOnInsert: true});
                             }
                         })
                         .catch(async (e) => {
-                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${manifest.subject}:${tag.tag}): ${e.message}`);                            
+                            Logger.error(`problems calling webhook ${channel.config.url} of channel ${channel.name}, (called because ${manifest.subject}:${tag.tag}): ${e.message}`);
                         })
                     }));
-                }));                
+                }));
             }
-        });  
+        });
     }
 
     /**
      * Get Version comparison for docker artifacts of this profile
      * @param email email of the profiles user
      */
-    async doNotifications(email: string, persist: boolean) {                        
+    async doNotifications(email: string, persist: boolean) {
         const profile: IUserProfile = await this.profileModel.findById( email );
         if (!profile)
-            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);                    
-        // mail notifications
-        this._handleMailNotification(profile, persist);        
+            throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
         // webhook notifications
-        this._handlAdditinalNotifications(profile, persist);      
+        Logger.info(`Handling Webbhook Notifications (single notification)`);
+        await this._handlAdditinalNotifications(profile, persist);
+        // mail notifications
+        Logger.info(`Handling Mail Notifications (summary notification)`);
+        await this._handleMailNotification(profile, persist);
     }
 
-    constructor(        
+    constructor(
         @Inject('UserProfileToken') private readonly profileModel: Model<IUserProfile>,
         @Inject('NotificationStatusToken') private readonly notifcationstatusModel: Model<INotificationStatus>,
         private readonly versionService: VersionService,

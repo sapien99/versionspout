@@ -1,14 +1,21 @@
 version: '3'
 services:
-  mongo:
-    image: mongo:3.6
-    volumes:
-       - /data/mongodb:/var/data/db
-  versionspout:
+  spout:
+    restart: always
     image: sapien99/versionspout:0.9.0
+    ports:
+      - "90:3000"
     volumes:
-       - versionspout/mounts:/opt/app/mounts
+      - $PWD:/opt/app/mounts
     environment:
-      - CONFIG=/opt/app/mounts/configmaps/config.yaml
-      - PASSWORDS=/opt/app/mounts/secrets/creds.yaml
       - ASSETS=/opt/app/mounts/assets
+      - https_proxy=proxy
+      - http_proxy=proxy
+      - no_proxy=jira-webhook
+      - LOG_LEVEL=1
+      - MONGO_URL=mongodb://versionspout:versionspout@mongoserver:27017/versionspout
+      - MONGO_CACHE_TIME=300
+      - SMTP_HOST=mailserver
+      - SMTP_PORT=25
+      - SMTP_SECURE=false
+      - SMTP_FROM=versionspout@versionspout.com
